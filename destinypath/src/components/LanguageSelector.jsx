@@ -16,6 +16,9 @@ const LanguageSelector = () => {
       >
         <option value="en">English</option>
         <option value="ko">한국어</option>
+        <option value="zh">中文</option>
+        <option value="jp">日本語</option>
+
       </select>
     </div>
   );

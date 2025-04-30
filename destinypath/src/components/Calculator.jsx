@@ -63,12 +63,12 @@ const Calculator = () => {
 
   return (
     <div className="bg-purple-800 p-8 rounded-lg shadow-lg max-w-2xl w-full mx-auto">
-      <h2 className="text-2xl font-bold mb-4 text-white">{t('title')}</h2>
+      <h2 className="text-2xl font-bold mb-4 text-white">{t('Choose your Analysis Type')}</h2>
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {/* Analysis Type Selection */}
       <div className="mb-6">
-        <label className="block mb-2 text-white">{t('analysis_type')}</label>
+        <label className="block mb-2 text-white">{t('Analysis Type')}</label>
         <select
           value={analysisType}
           onChange={(e) => setAnalysisType(e.target.value)}
@@ -80,7 +80,7 @@ const Calculator = () => {
       </div>
 
       {/* Person 1 Inputs */}
-      <h3 className="text-xl font-semibold mb-4 text-white">{t('person1')}</h3>
+      <h3 className="text-xl font-semibold mb-4 text-white">{t('Person 1')}</h3>
       <div className="mb-4">
         <label className="block mb-2 text-white">{t('Name')}</label>
         <input
@@ -135,7 +135,7 @@ const Calculator = () => {
       {/* Person 2 Inputs (Couple Mode) */}
       {analysisType === 'couple' && (
         <>
-          <h3 className="text-xl font-semibold mb-4 text-white">{t('person2')}</h3>
+          <h3 className="text-xl font-semibold mb-4 text-white">{t('Person 2')}</h3>
           <div className="mb-4">
             <label className="block mb-2 text-white">{t('Names')}</label>
             <input
@@ -193,7 +193,7 @@ const Calculator = () => {
         onClick={handleCalculate}
         className="bg-purple-600 hover:bg-purple-500 text-white p-2 rounded w-full mt-4"
       >
-        {t('calculate')}
+        {t('Calculate')}
       </button>
 
       {/* Results */}

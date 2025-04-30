@@ -42,3 +42,5 @@ Thumbs.db
 # Project-Specific
 /public/build/
 /src/styles/ # If you removed this directory due to 404 errors
+node_modules/.package-lock.json
+node_modules/.package-lock.json

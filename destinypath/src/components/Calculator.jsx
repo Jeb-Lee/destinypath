@@ -74,37 +74,37 @@ const Calculator = () => {
           onChange={(e) => setAnalysisType(e.target.value)}
           className="w-full p-2 rounded text-black"
         >
-          <option value="single">{t('single_analysis')}</option>
-          <option value="couple">{t('couple_compatibility')}</option>
+          <option value="single">{t('Single Analysis')}</option>
+          <option value="couple">{t('Couple Compatibility')}</option>
         </select>
       </div>
 
       {/* Person 1 Inputs */}
       <h3 className="text-xl font-semibold mb-4 text-white">{t('person1')}</h3>
       <div className="mb-4">
-        <label className="block mb-2 text-white">{t('name_label')}</label>
+        <label className="block mb-2 text-white">{t('Name')}</label>
         <input
           type="text"
           value={person1.name}
           onChange={(e) => handleInputChange('person1', 'name', e.target.value)}
           className="w-full p-2 rounded text-black"
-          placeholder={t('name_placeholder')}
+          placeholder={t('Name')}
         />
       </div>
       <div className="mb-4">
-        <label className="block mb-2 text-white">{t('gender_label')}</label>
+        <label className="block mb-2 text-white">{t('Gender')}</label>
         <select
           value={person1.gender}
           onChange={(e) => handleInputChange('person1', 'gender', e.target.value)}
           className="w-full p-2 rounded text-black"
         >
-          <option value="">{t('select_gender')}</option>
-          <option value="male">{t('male')}</option>
-          <option value="female">{t('female')}</option>
+          <option value="">{t('Select gender')}</option>
+          <option value="male">{t('Male')}</option>
+          <option value="female">{t('Female')}</option>
         </select>
       </div>
       <div className="mb-4">
-        <label className="block mb-2 text-white">{t('birthdate_label')}</label>
+        <label className="block mb-2 text-white">{t('Birth Date')}</label>
         <input
           type="date"
           value={person1.birthdate}
@@ -113,7 +113,7 @@ const Calculator = () => {
         />
       </div>
       <div className="mb-4">
-        <label className="block mb-2 text-white">{t('birth_time_label')}</label>
+        <label className="block mb-2 text-white">{t('Birth Time')}</label>
         <input
           type="time"
           value={person1.birthTime}
@@ -122,13 +122,13 @@ const Calculator = () => {
         />
       </div>
       <div className="mb-4">
-        <label className="block mb-2 text-white">{t('birthplace_label')}</label>
+        <label className="block mb-2 text-white">{t('Birth Place')}</label>
         <input
           type="text"
           value={person1.birthplace}
           onChange={(e) => handleInputChange('person1', 'birthplace', e.target.value)}
           className="w-full p-2 rounded text-black"
-          placeholder={t('birthplace_placeholder')}
+          placeholder={t('Enter birthplace here')}
         />
       </div>
 
@@ -137,29 +137,29 @@ const Calculator = () => {
         <>
           <h3 className="text-xl font-semibold mb-4 text-white">{t('person2')}</h3>
           <div className="mb-4">
-            <label className="block mb-2 text-white">{t('name_label')}</label>
+            <label className="block mb-2 text-white">{t('Names')}</label>
             <input
               type="text"
               value={person2.name}
               onChange={(e) => handleInputChange('person2', 'name', e.target.value)}
               className="w-full p-2 rounded text-black"
-              placeholder={t('name_placeholder')}
+              placeholder={t('Name')}
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-2 text-white">{t('gender_label')}</label>
+            <label className="block mb-2 text-white">{t('Gender')}</label>
             <select
               value={person2.gender}
               onChange={(e) => handleInputChange('person2', 'gender', e.target.value)}
               className="w-full p-2 rounded text-black"
             >
-              <option value="">{t('select_gender')}</option>
-              <option value="male">{t('male')}</option>
-              <option value="female">{t('female')}</option>
+              <option value="">{t('Select Gender')}</option>
+              <option value="male">{t('Male')}</option>
+              <option value="female">{t('Female')}</option>
             </select>
           </div>
           <div className="mb-4">
-            <label className="block mb-2 text-white">{t('birthdate_label')}</label>
+            <label className="block mb-2 text-white">{t('Birth Date')}</label>
             <input
               type="date"
               value={person2.birthdate}
@@ -168,7 +168,7 @@ const Calculator = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-2 text-white">{t('birth_time_label')}</label>
+            <label className="block mb-2 text-white">{t('Birth Time')}</label>
             <input
               type="time"
               value={person2.birthTime}
@@ -177,13 +177,13 @@ const Calculator = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-2 text-white">{t('birthplace_label')}</label>
+            <label className="block mb-2 text-white">{t('Birth Place')}</label>
             <input
               type="text"
               value={person2.birthplace}
               onChange={(e) => handleInputChange('person2', 'birthplace', e.target.value)}
               className="w-full p-2 rounded text-black"
-              placeholder={t('birthplace_placeholder')}
+              placeholder={t('Birthplace')}
             />
           </div>
         </>

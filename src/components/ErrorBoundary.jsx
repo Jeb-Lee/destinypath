@@ -1,4 +1,4 @@
-// ErrorBoundary.jsx
+// src/components/ErrorBoundary.jsx
 import React from 'react';
 
 class ErrorBoundary extends React.Component {
@@ -11,16 +11,21 @@ class ErrorBoundary extends React.Component {
     return { hasError: true };
   }
 
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+
   render() {
     if (this.state.hasError) {
       return (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
-          Something went wrong. Please refresh the page.
+        <div className="error-boundary">
+          <h2>Something went wrong</h2>
+          <p>Please refresh the page or try again later.</p>
         </div>
       );
     }
 
-    return this.props.children; 
+    return this.props.children;
   }
 }
 

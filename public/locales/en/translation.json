@@ -1,0 +1,29 @@
+{
+    "calculator": {
+      "analysis_type_selection": "Choose Analysis Type",
+      "single_analysis": "Single Analysis",
+      "couple_compatibility": "Couple Compatibility",
+      "person_1": "Person 1",
+      "person_2": "Person 2",
+      "name": "Name",
+      "birthplace": "Birthplace",
+      "gender": "Gender",
+      "birth_date": "Birth Date",
+      "birth_time": "Birth Time",
+      "calculate": "Calculate",
+      "calculating": "Calculating...",
+      "select_gender": "Select gender",
+      "male": "Male",
+      "female": "Female",
+      "enter_birthplace": "Enter birthplace here"
+    },
+    "error": {
+      "required_fields": "Please fill all required fields",
+      "connection_failed": "Failed to connect to server",
+      "calculation_failed": "Calculation failed"
+    },
+    "app": {
+      "destiny_path": "Destiny Path",
+      "welcome": "Welcome"
+    }
+  }

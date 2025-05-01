@@ -1,46 +1,24 @@
-# Node.js
-node_modules/
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+pnpm-debug.log*
+lerna-debug.log*
 
-# Vite
-dist/
-.vite/
+node_modules
+dist
+dist-ssr
+*.local
 
-# Environment Variables
-.env
-.env.local
-.env.development
-.env.production
-
-# Logs
-logs/
-*.log
-npm-cache/
-
-# Temporary Files
-*.tmp
-*.temp
-*.swp
-
-# Build Artifacts
-build/
-coverage/
-
-# IDE and Editor Files
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# OS Generated Files
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
-
-# Project-Specific
-/public/build/
-/src/styles/ # If you removed this directory due to 404 errors
-node_modules/.package-lock.json
-node_modules/.package-lock.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

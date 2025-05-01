@@ -2,66 +2,59 @@ import React, { useState } from 'react';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 
+// Helper components moved to top
+const InputField = ({ label, type = 'text', value, onChange }) => (
+  <div>
+    <label className="block mb-1 text-sm font-medium">{label}</label>
+    <input
+      type={type}
+      className="w-full p-2 border rounded"
+      value={value}
+      onChange={onChange}
+      required
+    />
+  </div>
+);
+
+const SelectField = ({ label, value, onChange, options }) => (
+  <div>
+    <label className="block mb-1 text-sm font-medium">{label}</label>
+    <select
+      className="w-full p-2 border rounded"
+      value={value}
+      onChange={onChange}
+      required
+    >
+      {options.map(option => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
 const Calculator = () => {
   const [analysisType, setAnalysisType] = useState('single');
   const [person1, setPerson1] = useState({
     name: '',
     birthDate: '',
     birthTime: '',
+    birthPlace: '',
     gender: 'male'
   });
   const [person2, setPerson2] = useState({
     name: '',
     birthDate: '',
     birthTime: '',
+    birthPlace: '',
     gender: 'female'
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const formatPersonData = (person) => ({
-    ...person,
-    birthDate: new Date(person.birthDate).toISOString()
-  });
-
-  const handleInputChange = (person, field) => (e) => {
-    const value = e.target.value;
-    if (person === 'person1') {
-      setPerson1(prev => ({ ...prev, [field]: value }));
-    } else {
-      setPerson2(prev => ({ ...prev, [field]: value }));
-    }
-  };
-
-  const handleCalculate = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('http://localhost:5000/api/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          analysisType,
-          person1: formatPersonData(person1),
-          person2: analysisType === 'couple' ? formatPersonData(person2) : null
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
-      }
-
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      setError(err.message);
-      console.error('Calculation error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Moved render functions before they're used
   const renderPersonAnalysis = (personData) => (
     <div className="analysis-container">
       <h2 className="text-xl font-bold mb-4">{personData.name}'s Analysis</h2>
@@ -177,6 +170,70 @@ const Calculator = () => {
     </div>
   );
 
+  const formatPersonData = (person) => {
+    // Validate birth date exists and is valid
+    if (!person.birthDate) {
+      throw new Error('Birth date is required');
+    }
+    
+    const birthDate = new Date(person.birthDate);
+    if (isNaN(birthDate.getTime())) {
+      throw new Error('Invalid birth date format');
+    }
+
+    return {
+      ...person,
+      birthDate: birthDate.toISOString()
+    };
+  };
+
+  const handleInputChange = (person, field) => (e) => {
+    const value = e.target.value;
+    if (person === 'person1') {
+      setPerson1(prev => ({ ...prev, [field]: value }));
+    } else {
+      setPerson2(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const handleCalculate = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Validate required fields
+      if (!person1.name || !person1.birthDate || !person1.birthTime || !person1.birthPlace) {
+        throw new Error('Please fill all required fields for Person 1');
+      }
+      
+      if (analysisType === 'couple' && 
+          (!person2.name || !person2.birthDate || !person2.birthTime || !person2.birthPlace)) {
+        throw new Error('Please fill all required fields for Person 2');
+      }
+
+      const response = await fetch('http://localhost:5000/api/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analysisType,
+          person1: formatPersonData(person1),
+          person2: analysisType === 'couple' ? formatPersonData(person2) : null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      setResult(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Calculation error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -198,16 +255,18 @@ const Calculator = () => {
           <div className="person-input bg-gray-50 p-4 rounded">
             <h2 className="text-lg font-semibold mb-3">Person 1</h2>
             <div className="space-y-3">
-              <InputField label="Name" value={person1.name} onChange={handleInputChange('person1', 'name')} />
+              <InputField label="Full Name" value={person1.name} onChange={handleInputChange('person1', 'name')} />
               <InputField label="Birth Date" type="date" value={person1.birthDate} onChange={handleInputChange('person1', 'birthDate')} />
               <InputField label="Birth Time" type="time" value={person1.birthTime} onChange={handleInputChange('person1', 'birthTime')} />
+              <InputField label="Birth Place (City, Country)" value={person1.birthPlace} onChange={handleInputChange('person1', 'birthPlace')} />
               <SelectField 
                 label="Gender" 
                 value={person1.gender}
                 onChange={handleInputChange('person1', 'gender')}
                 options={[
                   { value: 'male', label: 'Male' },
-                  { value: 'female', label: 'Female' }
+                  { value: 'female', label: 'Female' },
+                  { value: 'other', label: 'Other' }
                 ]}
               />
             </div>
@@ -217,16 +276,18 @@ const Calculator = () => {
             <div className="person-input bg-gray-50 p-4 rounded">
               <h2 className="text-lg font-semibold mb-3">Person 2</h2>
               <div className="space-y-3">
-                <InputField label="Name" value={person2.name} onChange={handleInputChange('person2', 'name')} />
+                <InputField label="Full Name" value={person2.name} onChange={handleInputChange('person2', 'name')} />
                 <InputField label="Birth Date" type="date" value={person2.birthDate} onChange={handleInputChange('person2', 'birthDate')} />
                 <InputField label="Birth Time" type="time" value={person2.birthTime} onChange={handleInputChange('person2', 'birthTime')} />
+                <InputField label="Birth Place (City, Country)" value={person2.birthPlace} onChange={handleInputChange('person2', 'birthPlace')} />
                 <SelectField 
                   label="Gender" 
                   value={person2.gender}
                   onChange={handleInputChange('person2', 'gender')}
                   options={[
                     { value: 'male', label: 'Male' },
-                    { value: 'female', label: 'Female' }
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' }
                   ]}
                 />
               </div>
@@ -264,35 +325,5 @@ const Calculator = () => {
     </div>
   );
 };
-
-// Helper components
-const InputField = ({ label, type = 'text', value, onChange }) => (
-  <div>
-    <label className="block mb-1 text-sm font-medium">{label}</label>
-    <input
-      type={type}
-      className="w-full p-2 border rounded"
-      value={value}
-      onChange={onChange}
-    />
-  </div>
-);
-
-const SelectField = ({ label, value, onChange, options }) => (
-  <div>
-    <label className="block mb-1 text-sm font-medium">{label}</label>
-    <select
-      className="w-full p-2 border rounded"
-      value={value}
-      onChange={onChange}
-    >
-      {options.map(option => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  </div>
-);
 
 export default Calculator;

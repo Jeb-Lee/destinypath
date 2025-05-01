@@ -1,86 +1,103 @@
 import express from 'express';
 import cors from 'cors';
+import { calculateDetailedAnalysis } from './astrologyEngine.js';
 
 const app = express();
 const PORT = 5000;
 
 // Enhanced CORS configuration
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
 
-// Body parsing middleware
 app.use(express.json());
 
-// Test endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running' });
-});
-
-// Calculation endpoint with better error handling
-app.post('/api/calculate', (req, res) => {
+// Detailed Analysis Endpoint
+app.post('/api/calculate', async (req, res) => {
   try {
-    console.log('Received data:', req.body);
-    
-    // Validate required fields
-    if (!req.body.person1?.name) {
-      return res.status(400).json({ error: 'Name is required' });
+    const { person1, person2, analysisType } = req.body;
+
+    if (!person1?.birthdate) {
+      return res.status(400).json({ error: 'Birthdate is required' });
     }
 
-    // Mock response structure that matches your frontend expectations
-    const response = {
+    // Deep analysis calculation
+    const result = {
       status: 'success',
-      person1: {
-        name: req.body.person1.name,
-        saju: {
-          yearStem: 'Wood',
-          yearBranch: 'Rat',
-          monthStem: 'Fire',
-          monthBranch: 'Horse',
-          dayStem: 'Earth',
-          dayBranch: 'Dragon',
-          hourStem: 'Metal',
-          hourBranch: 'Monkey'
-        },
-        ziWeiDouShu: {
-          mainStar: 'Zi Wei',
-          palace: 'Life'
-        },
-        destinyMatrix: {
-          strength: 8,
-          wisdom: 7,
-          charisma: 6
-        },
-        astrology: {
-          sunSign: 'Leo'
-        },
-        fengShui: {
-          kuaNumber: 3,
-          bestDirection: 'East'
-        },
-        advice: "This is a sample advice based on your destiny path"
-      }
+      analysisType,
+      timestamp: new Date().toISOString(),
+      person1: await calculateDetailedAnalysis(person1),
+      ...(analysisType === 'couple' && person2 && { 
+        person2: await calculateDetailedAnalysis(person2),
+        compatibility: calculateCompatibility(person1, person2)
+      })
     };
 
-    if (req.body.analysisType === 'couple' && req.body.person2) {
-      response.person2 = {
-        /* similar structure for person2 */
-      };
-      response.compatibility = {
-        score: 85,
-        details: "Good compatibility in communication"
-      };
-    }
+    res.json(result);
 
-    res.json(response);
   } catch (error) {
-    console.error('Calculation error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Analysis error:', error);
+    res.status(500).json({ 
+      error: 'Detailed analysis failed',
+      details: error.message 
+    });
   }
 });
 
+// Helper functions
+async function calculateDetailedAnalysis(person) {
+  const birthDate = new Date(person.birthdate);
+  const birthTime = person.birthTime || '12:00';
+  
+  return {
+    personalAnalysis: {
+      // Chinese Astrology
+      bazi: calculateBazi(birthDate, birthTime),
+      ziWeiDouShu: calculateZiWeiChart(birthDate),
+      
+      // Western Astrology
+      natalChart: calculateNatalChart(birthDate, person.birthplace),
+      elementsBalance: calculateElements(birthDate),
+      
+      // Numerology
+      destinyNumber: calculateDestinyNumber(birthDate),
+      kuaNumber: calculateKuaNumber(person.gender, birthDate),
+      
+      // Personality Analysis
+      personalityProfile: generatePersonalityProfile(birthDate),
+      strengthsWeaknesses: identifyStrengthsWeaknesses(birthDate)
+    },
+    lifePathAnalysis: {
+      currentCycle: calculateCurrentLifeCycle(birthDate),
+      challengesOpportunities: identifyChallenges(birthDate),
+      yearlyForecast: generateYearlyForecast(birthDate)
+    },
+    recommendations: {
+      careerSuggestions: suggestCareers(birthDate),
+      healthAdvice: generateHealthAdvice(birthDate),
+      relationshipGuidance: generateRelationshipAdvice(birthDate)
+    }
+  };
+}
+
+function calculateCompatibility(person1, person2) {
+  return {
+    relationshipAnalysis: {
+      compatibilityScore: calculateCompatibilityScore(person1, person2),
+      strengths: identifyRelationshipStrengths(person1, person2),
+      challenges: identifyRelationshipChallenges(person1, person2),
+      synastryAspects: calculateSynastryAspects(person1, person2)
+    },
+    growthOpportunities: {
+      communicationStyle: compareCommunicationStyles(person1, person2),
+      emotionalConnection: analyzeEmotionalBond(person1, person2),
+      longTermPotential: assessLongTermPotential(person1, person2)
+    }
+  };
+}
+
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Deep Analysis Server running on port ${PORT}`);
 });

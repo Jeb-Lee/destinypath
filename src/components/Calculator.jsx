@@ -1,29 +1,32 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import ErrorBoundary from './ErrorBoundary';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
 
 const Calculator = () => {
-  const { t } = useTranslation();
   const [analysisType, setAnalysisType] = useState('single');
   const [person1, setPerson1] = useState({
     name: '',
-    gender: '',
-    birthdate: '',
+    birthDate: '',
     birthTime: '',
-    birthplace: ''
+    gender: 'male'
   });
   const [person2, setPerson2] = useState({
     name: '',
-    gender: '',
-    birthdate: '',
+    birthDate: '',
     birthTime: '',
-    birthplace: ''
+    gender: 'female'
   });
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleInputChange = (person, field, value) => {
+  const formatPersonData = (person) => ({
+    ...person,
+    birthDate: new Date(person.birthDate).toISOString()
+  });
+
+  const handleInputChange = (person, field) => (e) => {
+    const value = e.target.value;
     if (person === 'person1') {
       setPerson1(prev => ({ ...prev, [field]: value }));
     } else {
@@ -31,272 +34,200 @@ const Calculator = () => {
     }
   };
 
-  const validateInputs = () => {
-    const requiredFields = ['name', 'gender', 'birthdate', 'birthTime', 'birthplace'];
-    const person1Valid = requiredFields.every(field => person1[field]);
-    
-    if (analysisType === 'single') {
-      if (!person1Valid) {
-        setError(t('error.required_fields'));
-        return false;
-      }
-    } else {
-      const person2Valid = requiredFields.every(field => person2[field]);
-      if (!person1Valid || !person2Valid) {
-        setError(t('error.required_fields'));
-        return false;
-      }
-    }
-    return true;
-  };
-
   const handleCalculate = async () => {
-    if (!validateInputs()) return;
-    
     setLoading(true);
     setError(null);
-
     try {
-      const payload = analysisType === 'single' 
-        ? { analysisType, person1 } 
-        : { analysisType, person1, person2 };
-
       const response = await fetch('http://localhost:5000/api/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          analysisType,
+          person1: formatPersonData(person1),
+          person2: analysisType === 'couple' ? formatPersonData(person2) : null
+        })
       });
 
       if (!response.ok) {
-        throw new Error(t('error.calculation_failed'));
+        throw new Error(`Server responded with ${response.status}`);
       }
 
       const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
       setResult(data);
     } catch (err) {
-      setError(err.message.includes('Failed to fetch') 
-        ? t('error.connection_failed') 
-        : err.message);
+      setError(err.message);
+      console.error('Calculation error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderResultSection = () => {
-    if (!result) return null;
+  const renderPersonAnalysis = (personData) => (
+    <div className="analysis-container">
+      <h2 className="text-xl font-bold mb-4">{personData.name}'s Analysis</h2>
+      <Tabs>
+        <TabList>
+          <Tab>Core Analysis</Tab>
+          <Tab>Life Path</Tab>
+          <Tab>Recommendations</Tab>
+        </TabList>
 
-    const getValue = (obj, path, defaultValue = 'N/A') => {
-      return path.split('.').reduce((o, p) => (o && o[p] !== undefined ? o[p] : defaultValue), obj);
-    };
+        <TabPanel>
+          <div className="analysis-section">
+            <h3 className="text-lg font-semibold mb-2">Chinese Astrology</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium">Bazi (Four Pillars)</h4>
+                <p>Year: {personData.personalAnalysis?.bazi?.yearPillar || 'N/A'}</p>
+                <p>Month: {personData.personalAnalysis?.bazi?.monthPillar || 'N/A'}</p>
+                <p>Day: {personData.personalAnalysis?.bazi?.dayPillar || 'N/A'}</p>
+                <p>Hour: {personData.personalAnalysis?.bazi?.hourPillar || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="font-medium">Zi Wei Dou Shu</h4>
+                <p>Main Star: {personData.personalAnalysis?.ziWeiDouShu?.mainStar || 'N/A'}</p>
+                <p>Life Palace: {personData.personalAnalysis?.ziWeiDouShu?.lifePalace || 'N/A'}</p>
+              </div>
+            </div>
 
-    return (
-      <div className="mt-6 text-white">
-        {analysisType === 'single' ? (
-          <>
-            <h3 className="text-xl font-semibold">
-              {t('results_for', { name: getValue(result, 'person1.name', t('person_1')) })}
-            </h3>
+            <h3 className="text-lg font-semibold mt-4 mb-2">Western Astrology</h3>
+            <div className="natal-chart">
+              <p>Sun: {personData.personalAnalysis?.natalChart?.sun || 'N/A'}</p>
+              <p>Moon: {personData.personalAnalysis?.natalChart?.moon || 'N/A'}</p>
+              <p>Ascendant: {personData.personalAnalysis?.natalChart?.ascendant || 'N/A'}</p>
+            </div>
+          </div>
+        </TabPanel>
+
+        <TabPanel>
+          <div className="life-path">
+            <h3 className="text-lg font-semibold mb-2">Current Life Cycle</h3>
+            <p>{personData.lifePathAnalysis?.currentCycle?.description || 'No data available'}</p>
             
-            <h4 className="text-lg font-semibold mt-4">{t('saju')}</h4>
-            <p>{t('year_stem')}: {getValue(result, 'person1.saju.yearStem')}</p>
-            <p>{t('year_branch')}: {getValue(result, 'person1.saju.yearBranch')}</p>
-            <p>{t('month_stem')}: {getValue(result, 'person1.saju.monthStem')}</p>
-            <p>{t('month_branch')}: {getValue(result, 'person1.saju.monthBranch')}</p>
-            <p>{t('day_stem')}: {getValue(result, 'person1.saju.dayStem')}</p>
-            <p>{t('day_branch')}: {getValue(result, 'person1.saju.dayBranch')}</p>
-            <p>{t('hour_stem')}: {getValue(result, 'person1.saju.hourStem')}</p>
-            <p>{t('hour_branch')}: {getValue(result, 'person1.saju.hourBranch')}</p>
+            <h3 className="text-lg font-semibold mt-4 mb-2">Yearly Forecast</h3>
+            <ul className="list-disc pl-5">
+              {personData.lifePathAnalysis?.yearlyForecast?.map((item, i) => (
+                <li key={i} className="mb-1">
+                  <strong>{item.area}:</strong> {item.prediction}
+                </li>
+              )) || <li>No forecast data available</li>}
+            </ul>
+          </div>
+        </TabPanel>
 
-            <h4 className="text-lg font-semibold mt-4">{t('zi_wei_dou_shu')}</h4>
-            <p>{t('main_star')}: {getValue(result, 'person1.ziWeiDouShu.mainStar')}</p>
-            <p>{t('palace')}: {getValue(result, 'person1.ziWeiDouShu.palace')}</p>
+        <TabPanel>
+          <div className="recommendations">
+            <h3 className="text-lg font-semibold mb-2">Career Suggestions</h3>
+            <ul className="list-disc pl-5">
+              {personData.recommendations?.careerSuggestions?.map((career, i) => (
+                <li key={i} className="mb-1">{career}</li>
+              )) || <li>No career suggestions available</li>}
+            </ul>
 
-            <h4 className="text-lg font-semibold mt-4">{t('destiny_matrix')}</h4>
-            <p>{t('strength')}: {getValue(result, 'person1.destinyMatrix.strength')}</p>
-            <p>{t('wisdom')}: {getValue(result, 'person1.destinyMatrix.wisdom')}</p>
-            <p>{t('charisma')}: {getValue(result, 'person1.destinyMatrix.charisma')}</p>
+            <h3 className="text-lg font-semibold mt-4 mb-2">Health Advice</h3>
+            <p>{personData.recommendations?.healthAdvice || 'No health advice available'}</p>
+          </div>
+        </TabPanel>
+      </Tabs>
+    </div>
+  );
 
-            <h4 className="text-lg font-semibold mt-4">{t('astrology')}</h4>
-            <p>{t('sun_sign')}: {getValue(result, 'person1.astrology.sunSign')}</p>
-
-            <h4 className="text-lg font-semibold mt-4">{t('feng_shui')}</h4>
-            <p>{t('kua_number')}: {getValue(result, 'person1.fengShui.kuaNumber')}</p>
-            <p>{t('best_direction')}: {getValue(result, 'person1.fengShui.bestDirection')}</p>
-
-            <h4 className="text-lg font-semibold mt-4">{t('advice')}</h4>
-            <p>{getValue(result, 'person1.advice', t('no_advice_available'))}</p>
-          </>
-        ) : (
-          <>
-            <h3 className="text-xl font-semibold">{t('couple_compatibility')}</h3>
-            
-            <h4 className="text-lg font-semibold mt-4">
-              {t('person1_results', { name: getValue(result, 'person1.name', t('person_1')) })}
-            </h4>
-            <p>{t('saju')}: {getValue(result, 'person1.saju.yearStem')} {getValue(result, 'person1.saju.yearBranch')}</p>
-            <p>{t('zi_wei_dou_shu')}: {getValue(result, 'person1.ziWeiDouShu.mainStar')}</p>
-            <p>{t('destiny_matrix')}: {t('strength')} {getValue(result, 'person1.destinyMatrix.strength')}</p>
-            <p>{t('astrology')}: {getValue(result, 'person1.astrology.sunSign')}</p>
-            <p>{t('feng_shui')}: {t('kua')} {getValue(result, 'person1.fengShui.kuaNumber')}</p>
-
-            <h4 className="text-lg font-semibold mt-4">
-              {t('person2_results', { name: getValue(result, 'person2.name', t('person_2')) })}
-            </h4>
-            <p>{t('saju')}: {getValue(result, 'person2.saju.yearStem')} {getValue(result, 'person2.saju.yearBranch')}</p>
-            <p>{t('zi_wei_dou_shu')}: {getValue(result, 'person2.ziWeiDouShu.mainStar')}</p>
-            <p>{t('destiny_matrix')}: {t('strength')} {getValue(result, 'person2.destinyMatrix.strength')}</p>
-            <p>{t('astrology')}: {getValue(result, 'person2.astrology.sunSign')}</p>
-            <p>{t('feng_shui')}: {t('kua')} {getValue(result, 'person2.fengShui.kuaNumber')}</p>
-
-            <h4 className="text-lg font-semibold mt-4">{t('compatibility')}</h4>
-            <p>{t('score')}: {getValue(result, 'compatibility.score')}%</p>
-            <p>{t('details')}: {getValue(result, 'compatibility.details', t('no_details_available'))}</p>
-          </>
-        )}
+  const renderCompatibility = (compData) => (
+    <div className="compatibility-analysis mt-8">
+      <h2 className="text-xl font-bold mb-4">Relationship Compatibility</h2>
+      <div className="score-meter bg-gray-200 rounded-full h-6 mb-4">
+        <div 
+          className="score-bar bg-blue-500 rounded-full h-full text-white text-xs flex items-center justify-center" 
+          style={{ width: `${compData.relationshipAnalysis?.compatibilityScore || 0}%` }}
+        >
+          {compData.relationshipAnalysis?.compatibilityScore || 0}%
+        </div>
       </div>
-    );
-  };
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Strengths</h3>
+          <ul className="list-disc pl-5">
+            {compData.relationshipAnalysis?.strengths?.map((s, i) => (
+              <li key={i} className="mb-1">{s}</li>
+            )) || <li>No strengths data available</li>}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Challenges</h3>
+          <ul className="list-disc pl-5">
+            {compData.relationshipAnalysis?.challenges?.map((c, i) => (
+              <li key={i} className="mb-1">{c}</li>
+            )) || <li>No challenges data available</li>}
+          </ul>
+        </div>
+      </div>
+
+      <h3 className="text-lg font-semibold mt-6 mb-2">Growth Opportunities</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h4 className="font-medium">Communication</h4>
+          <p>{compData.growthOpportunities?.communicationStyle || 'No data available'}</p>
+        </div>
+        <div>
+          <h4 className="font-medium">Emotional Connection</h4>
+          <p>{compData.growthOpportunities?.emotionalConnection || 'No data available'}</p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <ErrorBoundary>
-      <div className="bg-purple-800 p-8 rounded-lg shadow-lg max-w-2xl w-full mx-auto">
-        <h2 className="text-2xl font-bold mb-4 text-white">{t('calculator.analysis_type_selection')}</h2>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold mb-6">Destiny Path Calculator</h1>
         
-        {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-6">
-          <label className="block mb-2 text-white">{t('calculator.analysis_type')}</label>
-          <select
+        <div className="mb-4">
+          <label className="block mb-2 font-medium">Analysis Type:</label>
+          <select 
+            className="w-full p-2 border rounded"
             value={analysisType}
             onChange={(e) => setAnalysisType(e.target.value)}
-            className="w-full p-2 rounded text-black"
           >
-            <option value="single">{t('calculator.single_analysis')}</option>
-            <option value="couple">{t('calculator.couple_compatibility')}</option>
+            <option value="single">Single Analysis</option>
+            <option value="couple">Couple Compatibility</option>
           </select>
         </div>
 
-        <div className="space-y-4">
-          {/* Person 1 Inputs */}
-          <div className="bg-purple-700 p-4 rounded-lg">
-            <h3 className="text-xl font-semibold mb-4 text-white">{t('calculator.person_1')}</h3>
-            <div className="mb-4">
-              <label className="block mb-2 text-white">{t('calculator.name')}</label>
-              <input
-                type="text"
-                value={person1.name}
-                onChange={(e) => handleInputChange('person1', 'name', e.target.value)}
-                className="w-full p-2 rounded text-black"
-                placeholder={t('calculator.name')}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block mb-2 text-white">{t('calculator.gender')}</label>
-              <select
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="person-input bg-gray-50 p-4 rounded">
+            <h2 className="text-lg font-semibold mb-3">Person 1</h2>
+            <div className="space-y-3">
+              <InputField label="Name" value={person1.name} onChange={handleInputChange('person1', 'name')} />
+              <InputField label="Birth Date" type="date" value={person1.birthDate} onChange={handleInputChange('person1', 'birthDate')} />
+              <InputField label="Birth Time" type="time" value={person1.birthTime} onChange={handleInputChange('person1', 'birthTime')} />
+              <SelectField 
+                label="Gender" 
                 value={person1.gender}
-                onChange={(e) => handleInputChange('person1', 'gender', e.target.value)}
-                className="w-full p-2 rounded text-black"
-              >
-                <option value="">{t('calculator.select_gender')}</option>
-                <option value="male">{t('calculator.male')}</option>
-                <option value="female">{t('calculator.female')}</option>
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="mb-4">
-                <label className="block mb-2 text-white">{t('calculator.birth_date')}</label>
-                <input
-                  type="date"
-                  value={person1.birthdate}
-                  onChange={(e) => handleInputChange('person1', 'birthdate', e.target.value)}
-                  className="w-full p-2 rounded text-black"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-white">{t('calculator.birth_time')}</label>
-                <input
-                  type="time"
-                  value={person1.birthTime}
-                  onChange={(e) => handleInputChange('person1', 'birthTime', e.target.value)}
-                  className="w-full p-2 rounded text-black"
-                />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label className="block mb-2 text-white">{t('calculator.birth_place')}</label>
-              <input
-                type="text"
-                value={person1.birthplace}
-                onChange={(e) => handleInputChange('person1', 'birthplace', e.target.value)}
-                className="w-full p-2 rounded text-black"
-                placeholder={t('calculator.enter_birthplace')}
+                onChange={handleInputChange('person1', 'gender')}
+                options={[
+                  { value: 'male', label: 'Male' },
+                  { value: 'female', label: 'Female' }
+                ]}
               />
             </div>
           </div>
 
-          {/* Person 2 Inputs (Conditional) */}
           {analysisType === 'couple' && (
-            <div className="bg-purple-700 p-4 rounded-lg">
-              <h3 className="text-xl font-semibold mb-4 text-white">{t('calculator.person_2')}</h3>
-              <div className="mb-4">
-                <label className="block mb-2 text-white">{t('calculator.name')}</label>
-                <input
-                  type="text"
-                  value={person2.name}
-                  onChange={(e) => handleInputChange('person2', 'name', e.target.value)}
-                  className="w-full p-2 rounded text-black"
-                  placeholder={t('calculator.name')}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-white">{t('calculator.gender')}</label>
-                <select
+            <div className="person-input bg-gray-50 p-4 rounded">
+              <h2 className="text-lg font-semibold mb-3">Person 2</h2>
+              <div className="space-y-3">
+                <InputField label="Name" value={person2.name} onChange={handleInputChange('person2', 'name')} />
+                <InputField label="Birth Date" type="date" value={person2.birthDate} onChange={handleInputChange('person2', 'birthDate')} />
+                <InputField label="Birth Time" type="time" value={person2.birthTime} onChange={handleInputChange('person2', 'birthTime')} />
+                <SelectField 
+                  label="Gender" 
                   value={person2.gender}
-                  onChange={(e) => handleInputChange('person2', 'gender', e.target.value)}
-                  className="w-full p-2 rounded text-black"
-                >
-                  <option value="">{t('calculator.select_gender')}</option>
-                  <option value="male">{t('calculator.male')}</option>
-                  <option value="female">{t('calculator.female')}</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="mb-4">
-                  <label className="block mb-2 text-white">{t('calculator.birth_date')}</label>
-                  <input
-                    type="date"
-                    value={person2.birthdate}
-                    onChange={(e) => handleInputChange('person2', 'birthdate', e.target.value)}
-                    className="w-full p-2 rounded text-black"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-2 text-white">{t('calculator.birth_time')}</label>
-                  <input
-                    type="time"
-                    value={person2.birthTime}
-                    onChange={(e) => handleInputChange('person2', 'birthTime', e.target.value)}
-                    className="w-full p-2 rounded text-black"
-                  />
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block mb-2 text-white">{t('calculator.birth_place')}</label>
-                <input
-                  type="text"
-                  value={person2.birthplace}
-                  onChange={(e) => handleInputChange('person2', 'birthplace', e.target.value)}
-                  className="w-full p-2 rounded text-black"
-                  placeholder={t('calculator.enter_birthplace')}
+                  onChange={handleInputChange('person2', 'gender')}
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' }
+                  ]}
                 />
               </div>
             </div>
@@ -304,19 +235,64 @@ const Calculator = () => {
         </div>
 
         <button
+          className={`w-full py-3 px-4 rounded-md font-medium text-white ${loading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
           onClick={handleCalculate}
           disabled={loading}
-          className={`bg-purple-600 hover:bg-purple-500 text-white p-2 rounded w-full mt-4 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
         >
-          {loading ? t('calculator.calculating') : t('calculator.calculate')}
+          {loading ? 'Calculating...' : 'Calculate Destiny Path'}
         </button>
 
-        {renderResultSection()}
+        {error && (
+          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded">
+            Error: {error}
+          </div>
+        )}
+
+        {result && (
+          <div className="results-container mt-8">
+            {renderPersonAnalysis(result.person1)}
+            
+            {analysisType === 'couple' && result.person2 && (
+              <>
+                {renderPersonAnalysis(result.person2)}
+                {renderCompatibility(result.compatibility)}
+              </>
+            )}
+          </div>
+        )}
       </div>
-    </ErrorBoundary>
+    </div>
   );
 };
+
+// Helper components
+const InputField = ({ label, type = 'text', value, onChange }) => (
+  <div>
+    <label className="block mb-1 text-sm font-medium">{label}</label>
+    <input
+      type={type}
+      className="w-full p-2 border rounded"
+      value={value}
+      onChange={onChange}
+    />
+  </div>
+);
+
+const SelectField = ({ label, value, onChange, options }) => (
+  <div>
+    <label className="block mb-1 text-sm font-medium">{label}</label>
+    <select
+      className="w-full p-2 border rounded"
+      value={value}
+      onChange={onChange}
+    >
+      {options.map(option => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
 
 export default Calculator;

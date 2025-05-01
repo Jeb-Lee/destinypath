@@ -104,53 +104,144 @@ const chineseNewYearDates = {
   2024: '2024-02-10'
 };
 
-export const calculateZodiac = (year, month, day) => {
+const westernZodiacs = [
+  { name: 'Aquarius', dates: ['01-20', '02-18'] },
+  { name: 'Pisces', dates: ['02-19', '03-20'] },
+  { name: 'Aries', dates: ['03-21', '04-19'] },
+  { name: 'Taurus', dates: ['04-20', '05-20'] },
+  { name: 'Gemini', dates: ['05-21', '06-20'] },
+  { name: 'Cancer', dates: ['06-21', '07-22'] },
+  { name: 'Leo', dates: ['07-23', '08-22'] },
+  { name: 'Virgo', dates: ['08-23', '09-22'] },
+  { name: 'Libra', dates: ['09-23', '10-22'] },
+  { name: 'Scorpio', dates: ['10-23', '11-21'] },
+  { name: 'Sagittarius', dates: ['11-22', '12-21'] },
+  { name: 'Capricorn', dates: ['12-22', '01-19'] }
+];
+
+const heavenlyStems = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'];
+const earthlyBranches = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
+
+export const calculateZodiac = (date) => {
+  const year = date.getFullYear();
   let zodiacYear = year;
+  
   if (chineseNewYearDates[year]) {
     const chineseNewYearDate = new Date(chineseNewYearDates[year]);
-    const birthDate = new Date(year, month - 1, day);
-    if (birthDate < chineseNewYearDate) {
+    if (date < chineseNewYearDate) {
       zodiacYear = year - 1;
     }
   }
+  
   const zodiacIndex = (zodiacYear - 4) % 12;
   return zodiacAnimals[zodiacIndex >= 0 ? zodiacIndex : 12 + zodiacIndex];
 };
 
-export const calculateSaju = (year, month, day, hour) => {
-  const heavenlyStems = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'];
-  const earthlyBranches = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
+export const calculateSaju = (date, hour) => {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hourNum = parseInt(hour.split(':')[0]);
 
-  // Simplified hour pillar
-  const hourIndex = Math.floor((hour % 24) / 2);
+  // Calculate hour pillar (each branch covers 2 hours)
+  const hourIndex = Math.floor(hourNum / 2);
   const hourStemIndex = (year - 4 + hourIndex) % 10;
 
   return {
     yearStem: heavenlyStems[(year - 4) % 10],
     yearBranch: earthlyBranches[(year - 4) % 12],
-    month: `Month ${month}`,
-    day: `Day ${day}`,
+    monthStem: heavenlyStems[(year - 4 + month - 1) % 10],
+    monthBranch: earthlyBranches[(month + 1) % 12],
+    dayStem: heavenlyStems[(year - 4 + month - 1 + day - 1) % 10],
+    dayBranch: earthlyBranches[(day + 9) % 12],
     hourStem: heavenlyStems[hourStemIndex],
     hourBranch: earthlyBranches[hourIndex]
   };
 };
 
-export const calculateDestinyNumber = (birthdate) => {
-  const [year, month, day] = birthdate.split('-').map(Number);
-  return (year + month + day) % 9 || 9;
+export const calculateDestinyNumber = (date) => {
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  
+  const reduceToDigit = num => num > 9 ? reduceToDigit(Math.floor(num / 10) + (num % 10) : num;
+  
+  return reduceToDigit(reduceToDigit(day) + reduceToDigit(month) + reduceToDigit(year));
 };
 
 export const calculateDestinyMatrix = (destinyNumber) => {
-  const destinyMatrix = {
-    1: { strength: 70, wisdom: 30, charisma: 20 },
-    2: { strength: 40, wisdom: 60, charisma: 30 },
-    3: { strength: 80, wisdom: 40, charisma: 60 },
-    4: { strength: 50, wisdom: 50, charisma: 40 },
-    5: { strength: 90, wisdom: 20, charisma: 80 },
-    6: { strength: 60, wisdom: 80, charisma: 50 },
-    7: { strength: 30, wisdom: 90, charisma: 60 },
-    8: { strength: 80, wisdom: 40, charisma: 24 },
-    9: { strength: 20, wisdom: 70, charisma: 90 }
+  const matrixValues = {
+    1: { strength: 8, wisdom: 6, charisma: 7 },
+    2: { strength: 5, wisdom: 8, charisma: 6 },
+    3: { strength: 7, wisdom: 5, charisma: 8 },
+    4: { strength: 6, wisdom: 7, charisma: 5 },
+    5: { strength: 9, wisdom: 4, charisma: 8 },
+    6: { strength: 7, wisdom: 8, charisma: 6 },
+    7: { strength: 4, wisdom: 9, charisma: 7 },
+    8: { strength: 8, wisdom: 5, charisma: 6 },
+    9: { strength: 5, wisdom: 7, charisma: 9 }
   };
-  return destinyMatrix[destinyNumber] || { strength: 0, wisdom: 0, charisma: 0 };
+  
+  return matrixValues[destinyNumber] || { strength: 5, wisdom: 5, charisma: 5 };
+};
+
+export const calculateWesternZodiac = (date) => {
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const dateStr = `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+
+  for (const zodiac of westernZodiacs) {
+    if (dateStr >= zodiac.dates[0] && dateStr <= zodiac.dates[1]) {
+      return zodiac.name;
+    }
+  }
+  return 'Capricorn';
+};
+
+export const calculateKuaNumber = (gender, date) => {
+  let year = date.getFullYear();
+  
+  // Adjust for Chinese New Year
+  if (chineseNewYearDates[year] && date < new Date(chineseNewYearDates[year])) {
+    year--;
+  }
+  
+  const sum = String(year).split('').reduce((acc, digit) => acc + parseInt(digit), 0);
+  const kua = (10 - (sum % 9)) || 9;
+  
+  return gender === 'male' ? kua : ((kua + 5) % 9 || 9);
+};
+
+export const calculateCompatibilityScore = (person1, person2) => {
+  const compatibilityMatrix = {
+    'Rat': { good: ['Dragon', 'Monkey', 'Ox'], bad: ['Horse'] },
+    'Ox': { good: ['Rat', 'Rooster', 'Snake'], bad: ['Goat'] },
+    'Tiger': { good: ['Horse', 'Dog', 'Pig'], bad: ['Monkey'] },
+    'Rabbit': { good: ['Goat', 'Pig', 'Dog'], bad: ['Rooster'] },
+    'Dragon': { good: ['Rat', 'Monkey', 'Rooster'], bad: ['Dog'] },
+    'Snake': { good: ['Ox', 'Rooster', 'Monkey'], bad: ['Pig'] },
+    'Horse': { good: ['Tiger', 'Dog', 'Goat'], bad: ['Rat'] },
+    'Goat': { good: ['Rabbit', 'Horse', 'Pig'], bad: ['Ox'] },
+    'Monkey': { good: ['Rat', 'Dragon', 'Snake'], bad: ['Tiger'] },
+    'Rooster': { good: ['Ox', 'Dragon', 'Snake'], bad: ['Rabbit'] },
+    'Dog': { good: ['Tiger', 'Horse', 'Rabbit'], bad: ['Dragon'] },
+    'Pig': { good: ['Tiger', 'Rabbit', 'Goat'], bad: ['Snake'] }
+  };
+
+  const p1Zodiac = person1.saju.yearBranch;
+  const p2Zodiac = person2.saju.yearBranch;
+  
+  let score = 50; // Base score
+  
+  if (compatibilityMatrix[p1Zodiac]?.good.includes(p2Zodiac)) score += 25;
+  if (compatibilityMatrix[p1Zodiac]?.bad.includes(p2Zodiac)) score -= 25;
+  
+  // Add score based on element compatibility
+  const elementsCompatible = (
+    (person1.saju.yearStem === 'Jia' && person2.saju.yearStem === 'Ji') ||
+    (person1.saju.yearStem === 'Yi' && person2.saju.yearStem === 'Geng')
+  );
+  if (elementsCompatible) score += 15;
+  
+  return Math.max(0, Math.min(100, Math.round(score)));
 };

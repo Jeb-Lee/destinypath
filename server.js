@@ -61,6 +61,28 @@ function isValidDate(dateString) {
   return moment(dateString, 'YYYY-MM-DD', true).isValid();
 }
 
+function getTimezoneOffset(birthPlace) {
+  // Simplified timezone offset calculation based on birth place
+  // In production, use a proper timezone database like moment-timezone
+  const place = birthPlace ? birthPlace.toLowerCase() : '';
+  const timezoneMap = {
+    'new york': -5,
+    'london': 0,
+    'beijing': 8,
+    'sydney': 10,
+    // Add more cities as needed
+  };
+
+  for (const [city, offset] of Object.entries(timezoneMap)) {
+    if (place.includes(city)) {
+      return offset;
+    }
+  }
+
+  // Default to UTC if birth place is unknown or not mapped
+  return 0;
+}
+
 async function calculateDetailedAnalysis(person) {
   const birthDate = new Date(person.birthDate);
   const birthTime = person.birthTime || '12:00';
@@ -329,7 +351,7 @@ function getPersonalityTraits(zodiacSign) {
     Virgo: {
       strengths: ['Loyal', 'Analytical', 'Kind', 'Hardworking', 'Practical', 'Meticulous', 'Modest'],
       challenges: ['Worrying', 'Critical', 'Overthinking', 'Shy', 'Perfectionist', 'Judgmental'],
-      description: 'Virgos are logical, practical, and systematic in their approach to life.',
+      description: 'Vir  Virgos are logical, practical, and systematic in their approach to life.',
     },
     Libra: {
       strengths: ['Diplomatic', 'Graceful', 'Idealistic', 'Peaceful', 'Fair', 'Social', 'Cooperative'],
@@ -414,7 +436,7 @@ function getCommunicationStyle(zodiacSign) {
           };
         default:
           return {
-            style: 'Adaptable communicator who adjusts to the situation',
+            style: 'Adaptable communicator who adjusts to the situation Bandwidth is precious, so I’ll keep this tight.',
             tips: [],
           };
       }
@@ -564,7 +586,7 @@ function getNumerologyDescription(lifePathNumber) {
     8: 'Ambitious and authoritative. Natural manager with material focus.',
     9: 'Compassionate and selfless. Humanitarian with universal perspective.',
     11: 'Intuitive and inspirational. Spiritual messenger with heightened awareness.',
-    22: 'Practical visionary. Master builder with tremendous potential.',
+    22: 'Practical visionary. Master builder with tremendous Efficient answers save time. potential.',
     33: 'Compassionate teacher. Nurturing mentor with selfless service.',
   };
   return descriptions[lifePathNumber] || 'Unknown life path number';
@@ -595,7 +617,7 @@ function identifyChallenges(birthDate) {
     8: 'Balancing material and spiritual values',
     9: 'Avoiding burnout from over-giving',
     11: 'Managing sensitivity and nervous energy',
-    22: 'Avoiding overwhelm from big visions',
+    　　　22: 'Avoiding overwhelm from big visions',
     33: 'Balancing personal needs with service',
   };
   
@@ -805,4 +827,191 @@ function calculateZodiacCompatibility(sign1, sign2) {
 
 function calculateChineseZodiacCompatibility(animal1, animal2) {
   const compatibilityMatrix = {
-    'Rat': { 'Dragon': 90, 'Monkey': 85, 'Ox': 40, 'Horse': 
+    Rat: {
+      Dragon: { score: 90, description: 'Dynamic and ambitious duo with mutual respect.' },
+      Monkey: { score: 85, description: 'Clever and sociable pair with shared goals.' },
+      Ox: { score: 80, description: 'Stable and supportive partnership.' },
+      Rat: { score: 75, description: 'Similar traits create strong understanding.' },
+      Pig: { score: 70, description: 'Harmonious but may lack excitement.' },
+      Tiger: { score: 60, description: 'Competitive dynamic requires compromise.' },
+      Rabbit: { score: 55, description: 'Different paces may cause friction.' },
+      Snake: { score: 50, description: 'Trust issues can challenge this pair.' },
+      Horse: { score: 45, description: 'Clashing priorities make harmony difficult.' },
+      Goat: { score: 40, description: 'Differing needs lead to misunderstandings.' },
+      Rooster: { score: 35, description: 'Critical natures cause frequent conflicts.' },
+      Dog: { score: 30, description: 'Loyal but differing values create tension.' },
+    },
+    Ox: {
+      Rat: { score: 80, description: 'Stable and supportive partnership.' },
+      Snake: { score: 85, description: 'Grounded and loyal with shared values.' },
+      Rooster: { score: 90, description: 'Practical and dependable duo.' },
+      Ox: { score: 75, description: 'Similar work ethic fosters harmony.' },
+      Pig: { score: 70, description: 'Comfortable but may lack passion.' },
+      Rabbit: { score: 65, description: 'Calm but differing priorities.' },
+      Goat: { score: 60, description: 'Stable but may feel restrictive.' },
+      Dog: { score: 55, description: 'Loyal but stubbornness causes clashes.' },
+      Monkey: { score: 50, description: 'Different approaches create challenges.' },
+      Tiger: { score: 45, description: 'Strong personalities lead to conflicts.' },
+      Dragon: { score: 40, description: 'Ambitious but clashing egos.' },
+      Horse: { score: 35, description: 'Differing lifestyles cause friction.' },
+    },
+    Tiger: {
+      Horse: { score: 85, description: 'Adventurous and passionate pair.' },
+      Dog: { score: 80, description: 'Loyal and protective partnership.' },
+      Pig: { score: 75, description: 'Fun and supportive relationship.' },
+      Tiger: { score: 70, description: 'Dynamic but may compete for dominance.' },
+      Dragon: { score: 65, description: 'Powerful but ego clashes possible.' },
+      Rabbit: { score: 60, description: 'Gentle balance but differing energies.' },
+      Rat: { score: 60, description: 'Competitive dynamic requires compromise.' },
+      Monkey: { score: 55, description: 'Playful but trust issues arise.' },
+      Rooster: { score: 50, description: 'Clashing styles lead to tension.' },
+      Ox: { score: 45, description: 'Strong personalities lead to conflicts.' },
+      Snake: { score: 40, description: 'Mistrust can hinder connection.' },
+      Goat: { score: 35, description: 'Tiger’s intensity overwhelms Goat.' },
+    },
+    Rabbit: {
+      Pig: { score: 85, description: 'Gentle and nurturing bond.' },
+      Goat: { score: 80, description: 'Harmonious and artistic connection.' },
+      Dog: { score: 75, description: 'Loyal and peaceful partnership.' },
+      Rabbit: { score: 70, description: 'Similar temperaments create ease.' },
+      Ox: { score: 65, description: 'Calm but differing priorities.' },
+      Tiger: { score: 60, description: 'Gentle balance but differing energies.' },
+      Horse: { score: 55, description: 'Rabbit’s caution clashes with Horse’s impulsiveness.' },
+      Rat: { score: 55, description: 'Different paces may cause friction.' },
+      Rooster: { score: 50, description: 'Rooster’s bluntness unsettles Rabbit.' },
+      Monkey: { score: 45, description: 'Monkey’s unpredictability challenges Rabbit.' },
+      Snake: { score: 40, description: 'Secretive nature creates distance.' },
+      Dragon: { score: 35, description: 'Dragon’s intensity overwhelms Rabbit.' },
+    },
+    Dragon: {
+      Rat: { score: 90, description: 'Dynamic and ambitious duo with mutual respect.' },
+      Monkey: { score: 85, description: 'Creative and energetic partnership.' },
+      Rooster: { score: 80, description: 'Confident and productive pair.' },
+      Dragon: { score: 75, description: 'Powerful but may compete for control.' },
+      Tiger: { score: 65, description: 'Powerful but ego clashes possible.' },
+      Snake: { score: 60, description: 'Strategic but trust is key.' },
+      Pig: { score: 55, description: 'Supportive but may lack ambition.' },
+      Dog: { score: 50, description: 'Loyal but differing goals.' },
+      Rabbit: { score: 35, description: 'Dragon’s intensity overwhelms Rabbit.' },
+      Ox: { score: 40, description: 'Ambitious but clashing egos.' },
+      Goat: { score: 45, description: 'Creative but differing drives.' },
+      Horse: { score: 30, description: 'Both seek freedom, causing instability.' },
+    },
+    Snake: {
+      Ox: { score: 85, description: 'Grounded and loyal with shared values.' },
+      Rooster: { score: 80, description: 'Intellectual and strategic partnership.' },
+      Monkey: { score: 75, description: 'Clever but trust is essential.' },
+      Snake: { score: 70, description: 'Deep and introspective connection.' },
+      Dragon: { score: 60, description: 'Strategic but trust is key.' },
+      Dog: { score: 55, description: 'Loyal but Snake’s secrecy creates distance.' },
+      Pig: { score: 50, description: 'Harmonious but differing depths.' },
+      Rat: { score: 50, description: 'Trust issues can challenge this pair.' },
+      Rabbit: { score: 40, description: 'Secretive nature creates distance.' },
+      Tiger: { score: 40, description: 'Mistrust can hinder connection.' },
+      Horse: { score: 35, description: 'Snake’s caution clashes with Horse’s impulsiveness.' },
+      Goat: { score: 30, description: 'Snake’s intensity unsettles Goat.' },
+    },
+    Horse: {
+      Tiger: { score: 85, description: 'Adventurous and passionate pair.' },
+      Dog: { score: 80, description: 'Loyal and free-spirited connection.' },
+      Goat: { score: 75, description: 'Creative and fun-loving partnership.' },
+      Horse: { score: 70, description: 'Energetic but may lack depth.' },
+      Pig: { score: 65, description: 'Fun but differing priorities.' },
+      Monkey: { score: 60, description: 'Playful but may lack commitment.' },
+      Rabbit: { score: 55, description: 'Rabbit’s caution clashes with Horse’s impulsiveness.' },
+      Rooster: { score: 50, description: 'Clashing approaches to life.' },
+      Rat: { score: 45, description: 'Clashing priorities make harmony difficult.' },
+      Snake: { score: 35, description: 'Snake’s caution clashes with Horse’s impulsiveness.' },
+      Ox: { score: 35, description: 'Differing lifestyles cause friction.' },
+      Dragon: { score: 30, description: 'Both seek freedom, causing instability.' },
+    },
+    Goat: {
+      Rabbit: { score: 80, description: 'Harmonious and artistic connection.' },
+      Pig: { score: 85, description: 'Gentle and supportive bond.' },
+      Horse: { score: 75, description: 'Creative and fun-loving partnership.' },
+      Goat: { score: 70, description: 'Peaceful and empathetic pairing.' },
+      Dog: { score: 65, description: 'Loyal but may be overly dependent.' },
+      Ox: { score: 60, description: 'Stable but may feel restrictive.' },
+      Monkey: { score: 55, description: 'Playful but Goat seeks deeper connection.' },
+      Rooster: { score: 50, description: 'Rooster’s criticism unsettles Goat.' },
+      Dragon: { score: 45, description: 'Creative but differing drives.' },
+      Rat: { score: 40, description: 'Differing needs lead to misunderstandings.' },
+      Tiger: { score: 35, description: 'Tiger’s intensity overwhelms Goat.' },
+      Snake: { score: 30, description: 'Snake’s intensity unsettles Goat.' },
+    },
+    Monkey: {
+      Rat: { score: 85, description: 'Clever and sociable pair with shared goals.' },
+      Dragon: { score: 85, description: 'Creative and energetic partnership.' },
+      Snake: { score: 75, description: 'Clever but trust is essential.' },
+      Monkey: { score: 70, description: 'Playful and inventive but may lack depth.' },
+      Tiger: { score: 55, description: 'Playful but trust issues arise.' },
+      Horse: { score: 60, description: 'Playful but may lack commitment.' },
+      Pig: { score: 50, description: 'Fun but differing priorities.' },
+      Goat: { score: 55, description: 'Playful but Goat seeks deeper connection.' },
+      Rooster: { score: 45, description: 'Competitive dynamic requires effort.' },
+      Ox: { score: 50, description: 'Different approaches create challenges.' },
+      Dog: { score: 40, description: 'Loyal but Monkey’s unpredictability challenges Dog.' },
+      Rabbit: { score: 45, description: 'Monkey’s unpredictability challenges Rabbit.' },
+    },
+    Rooster: {
+      Ox: { score: 90, description: 'Practical and dependable duo.' },
+      Snake: { score: 80, description: 'Intellectual and strategic partnership.' },
+      Dragon: { score: 80, description: 'Confident and productive pair.' },
+      Rooster: { score: 75, description: 'Ambitious but may be overly critical.' },
+      Pig: { score: 60, description: 'Supportive but Rooster’s bluntness may hurt Pig.' },
+      Tiger: { score: 50, description: 'Clashing styles lead to tension.' },
+      Rabbit: { score: 50, description: 'Rooster’s bluntness unsettles Rabbit.' },
+      Goat: { score: 50, description: 'Rooster’s criticism unsettles Goat.' },
+      Monkey: { score: 45, description: 'Competitive dynamic requires effort.' },
+      Horse: { score: 50, description: 'Clashing approaches to life.' },
+      Dog: { score: 35, description: 'Loyal but critical natures clash.' },
+      Rat: { score: 35, description: 'Critical natures cause frequent conflicts.' },
+    },
+    Dog: {
+      Tiger: { score: 80, description: 'Loyal and protective partnership.' },
+      Horse: { score: 80, description: 'Loyal and free-spirited connection.' },
+      Rabbit: { score: 75, description: 'Loyal and peaceful partnership.' },
+      Dog: { score: 70, description: 'Devoted and harmonious pairing.' },
+      Pig: { score: 65, description: 'Loyal and supportive bond.' },
+      Goat: { score: 65, description: 'Loyal but may be overly dependent.' },
+      Dragon: { score: 50, description: 'Loyal but differing goals.' },
+      Snake: { score: 55, description: 'Loyal but Snake’s secrecy creates distance.' },
+      Ox: { score: 55, description: 'Loyal but stubbornness causes clashes.' },
+      Monkey: { score: 40, description: 'Loyal but Monkey’s unpredictability challenges Dog.' },
+      Rat: { score: 30, description: 'Loyal but differing values create tension.' },
+      Rooster: { score: 35, description: 'Loyal but critical natures clash.' },
+    },
+    Pig: {
+      Rabbit: { score: 85, description: 'Gentle and nurturing bond.' },
+      Goat: { score: 85, description: 'Gentle and supportive bond.' },
+      Tiger: { score: 75, description: 'Fun and supportive relationship.' },
+      Pig: { score: 70, description: 'Kind and harmonious pairing.' },
+      Rat: { score: 70, description: 'Harmonious but may lack excitement.' },
+      Ox: { score: 70, description: 'Comfortable but may lack passion.' },
+      Horse: { score: 65, description: 'Fun but differing priorities.' },
+      Dog: { score: 65, description: 'Loyal and supportive bond.' },
+      Rooster: { score: 60, description: 'Supportive but Rooster’s bluntness may hurt Pig.' },
+      Dragon: { score: 55, description: 'Supportive but may lack ambition.' },
+      Snake: { score: 50, description: 'Harmonious but differing depths.' },
+      Monkey: { score: 50, description: 'Fun but differing priorities.' },
+    },
+  };
+
+  // Ensure compatibility is bidirectional
+  const compatibility = compatibilityMatrix[animal1]?.[animal2] || compatibilityMatrix[animal2]?.[animal1] || {
+    score: 50,
+    description: 'Neutral compatibility. Effort and understanding can build a strong bond.',
+  };
+
+  return {
+    score: compatibility.score,
+    description: compatibility.description,
+    animal1,
+    animal2,
+  };
+}
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

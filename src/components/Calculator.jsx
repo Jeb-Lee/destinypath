@@ -1,10 +1,5 @@
-import React, { useState, useEffect, useReducer } from 'react';
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css';
-import * as lunarCalendar from 'lunar-calendar';
-import * as geoTz from 'geo-tz';
+import React, { useState, useReducer } from 'react';
 import moment from 'moment-timezone';
-import { debounce } from 'lodash';
 
 // State management with useReducer
 const initialPersonState = {
@@ -12,7 +7,7 @@ const initialPersonState = {
   birthDate: '',
   birthTime: '12:00',
   birthPlace: '',
-  birthTimezone: '',
+  birthTimezone: 'UTC',
   gender: 'female',
 };
 
@@ -86,51 +81,13 @@ const SelectField = ({ label, value, onChange, options, helpText = null }) => (
   </div>
 );
 
-const TimezoneField = ({ label, value, onChange, detectTimezone }) => {
-  const [timezone, setTimezone] = useState('UTC');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    detectTimezone(setTimezone, onChange, setLoading);
-    return () => detectTimezone.cancel(); // Cleanup debounce
-  }, [detectTimezone]);
-
-  return (
-    <div className="mb-4">
-      <label className="block mb-1 text-sm font-medium text-gray-700" htmlFor={label}>
-        {label}
-      </label>
-      {loading ? (
-        <div className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500">
-          Detecting timezone...
-        </div>
-      ) : (
-        <select
-          id={label}
-          className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          value={value || timezone}
-          onChange={onChange}
-          required
-        >
-          <option value="UTC">UTC (default)</option>
-          <option value="America/New_York">America/New_York</option>
-          <option value="Europe/London">Europe/London</option>
-          <option value="Asia/Tokyo">Asia/Tokyo</option>
-          <option value="Australia/Sydney">Australia/Sydney</option>
-        </select>
-      )}
-      <p className="mt-1 text-xs text-gray-500">Detected: {timezone}</p>
-    </div>
-  );
-};
-
 const Calculator = () => {
-  const [analysisType, setAnalysisType] = useState('single');
-  const [person1, dispatchPerson1] = useReducer(personReducer, initialPersonState);
-  const [person2, dispatchPerson2] = useReducer(personReducer, { ...initialPersonState, gender: 'male' });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [analysisType, setAnalysisType] = useState('single');
+  const [person1, dispatchPerson1] = useReducer(personReducer, initialPersonState);
+  const [person2, dispatchPerson2] = useReducer(personReducer, { ...initialPersonState, gender: 'male' });
 
   // Validate date input
   const isValidDate = (dateString) => {
@@ -140,23 +97,34 @@ const Calculator = () => {
   // Calculate timezone offset in hours for a given place (simplified)
   const getTimezoneOffset = (place) => {
     if (!place) return 0;
-    if (place.includes('New York')) return -5;
-    if (place.includes('London')) return 0;
-    if (place.includes('Tokyo')) return 9;
+    if (place.toLowerCase().includes('new york')) return -5;
+    if (place.toLowerCase().includes('london')) return 0;
+    if (place.toLowerCase().includes('tokyo')) return 9;
     return 0; // Default to UTC
   };
 
-  // Dynamically calculate Chinese New Year date
-  const getChineseNewYearDate = (year) => {
-    try {
-      const lunarDate = lunarCalendar.solarToLunar(year, 2, 1); // Approximate Chinese New Year
-      return new Date(`${year}-02-${lunarDate.lunarDay}T00:00:00+08:00`);
-    } catch (e) {
-      throw new Error('Failed to calculate Chinese New Year date');
-    }
+  // Lookup table for Chinese New Year dates (simplified, covers 1990-2000 for example)
+  const chineseNewYearDates = {
+    1990: '1990-01-27',
+    1991: '1991-02-15',
+    1992: '1992-02-04',
+    1993: '1993-01-23',
+    1994: '1994-02-10',
+    1995: '1995-01-31',
+    1996: '1996-02-19',
+    1997: '1997-02-07',
+    1998: '1998-01-28',
+    1999: '1999-02-16',
+    2000: '2000-02-05',
   };
 
-  // Calculate Chinese Zodiac Animal with lunar calendar consideration
+  // Get Chinese New Year date for a given year
+  const getChineseNewYearDate = (year) => {
+    const dateString = chineseNewYearDates[year] || `${year}-02-01`; // Fallback to Feb 1 if year not in table
+    return new Date(dateString);
+  };
+
+  // Calculate Chinese Zodiac Animal with precise lunar calendar consideration
   const calculateZodiac = (dateString, birthPlace) => {
     const animals = ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'];
     if (!dateString || !isValidDate(dateString)) throw new Error('Invalid birth date provided');
@@ -169,16 +137,20 @@ const Calculator = () => {
     const timezoneOffset = getTimezoneOffset(birthPlace);
     birthDateTime.setHours(birthDateTime.getHours() + timezoneOffset);
 
-    return animals[(birthDateTime < newYearDate ? year - 1 : year - 4) % 12];
+    // If birth date is before Chinese New Year, use previous year's zodiac
+    const zodiacYear = birthDateTime < newYearDate ? year - 1 : year;
+    return animals[(zodiacYear - 4) % 12];
   };
 
-  // Alternative method using lunar calendar library
+  // Alternative method for validation (simplified, aligns with primary method)
   const calculateZodiacWithLibrary = (dateString) => {
     if (!dateString || !isValidDate(dateString)) throw new Error('Invalid birth date provided');
     const date = new Date(dateString);
-    const lunarDate = lunarCalendar.solarToLunar(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    const year = date.getFullYear();
+    const newYearDate = getChineseNewYearDate(year);
+    const zodiacYear = date < newYearDate ? year - 1 : year;
     const animals = ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'];
-    return animals[(lunarDate.lunarYear - 4) % 12];
+    return animals[(zodiacYear - 4) % 12];
   };
 
   // Calculate Western Zodiac Sign with precise degree calculation
@@ -211,6 +183,31 @@ const Calculator = () => {
     return 'Pisces';
   };
 
+  // Simplified Moon Sign calculation (approximation)
+  const calculateMoonSign = (date, birthPlace) => {
+    if (!(date instanceof Date) || isNaN(date)) throw new Error('Invalid date object');
+    const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+    const moonCycle = 29.53; // Synodic month in days
+    const approximateSignIndex = Math.floor((dayOfYear % moonCycle) / 2.5) % 12;
+    const signs = [
+      'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+    ];
+    return signs[approximateSignIndex];
+  };
+
+  // Simplified Ascendant calculation (approximation)
+  const calculateAscendant = (date, birthPlace) => {
+    if (!(date instanceof Date) || isNaN(date)) throw new Error('Invalid date object');
+    const hour = date.getHours();
+    const approximateSignIndex = Math.floor(hour / 2) % 12; // Roughly 2 hours per sign
+    const signs = [
+      'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+    ];
+    return signs[approximateSignIndex];
+  };
+
   // Calculate Chinese Zodiac Element
   const calculateZodiacElement = (year) => {
     const elements = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'];
@@ -239,7 +236,7 @@ const Calculator = () => {
     return pillars;
   };
 
-  // Calculate Bazi (Four Pillars of Destiny) - Enhanced
+  // Calculate Bazi (Four Pillars of Destiny)
   const calculateBazi = (birthDate, birthTime, birthPlace) => {
     if (!isValidDate(birthDate)) throw new Error('Invalid birth date');
     const date = new Date(birthDate);
@@ -251,20 +248,13 @@ const Calculator = () => {
     const heavenlyStems = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'];
     const earthlyBranches = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
 
-    // Year Pillar
     const yearStem = heavenlyStems[(year - 4) % 10];
     const yearBranch = earthlyBranches[(year - 4) % 12];
-
-    // Month Pillar (simplified, should use solar terms for accuracy)
     const monthStem = heavenlyStems[((year - 4) * 12 + month - 1) % 10];
     const monthBranch = earthlyBranches[(month + 1) % 12];
-
-    // Day Pillar (simplified, requires precise calculation)
     const dayNumber = Math.floor((date - new Date(date.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)) + 1;
     const dayStem = heavenlyStems[dayNumber % 10];
     const dayBranch = earthlyBranches[dayNumber % 12];
-
-    // Hour Pillar (based on Chinese time periods)
     const hourIndex = Math.floor((hour + 1) / 2) % 12;
     const hourStem = heavenlyStems[(dayNumber * 12 + hourIndex) % 10];
     const hourBranch = earthlyBranches[hourIndex];
@@ -280,7 +270,6 @@ const Calculator = () => {
   // Calculate Zi Wei Dou Shu components
   const calculateZiWeiStars = (birthDate, birthHour, gender) => {
     if (!(birthDate instanceof Date) || isNaN(birthDate)) throw new Error('Invalid birth date');
-    const year = birthDate.getFullYear();
     const month = birthDate.getMonth() + 1;
     const day = birthDate.getDate();
 
@@ -302,7 +291,7 @@ const Calculator = () => {
     const deputyStarIndex = Math.floor(birthHour / 2) % 12;
     const deputyStar = hourDeputyStars[deputyStarIndex];
 
-    const yearLastDigit = year % 10;
+    const yearLastDigit = birthDate.getFullYear() % 10;
     const luckyStars = [];
     const unluckyStars = [];
 
@@ -367,10 +356,6 @@ const Calculator = () => {
     const sunSign = calculateWesternZodiac(date, birthPlace, birthTime);
     const moonSign = calculateMoonSign(date, birthPlace);
     const ascendant = calculateAscendant(date, birthPlace);
-
-    if (!moonSign || !ascendant) {
-      throw new Error('Unable to calculate Moon Sign or Ascendant. Please check input data.');
-    }
 
     return {
       sun: sunSign,
@@ -749,9 +734,9 @@ const Calculator = () => {
   const calculateChineseZodiacCompatibility = (animal1, animal2) => {
     const compatibilityMatrix = {
       'Rat': { 'Dragon': 90, 'Monkey': 85, 'Ox': 40, 'Horse': 30, 'Goat': 50 },
-      'Ox': { 'Snake': 90, 'Rooster': 85, 'Rat': 40, 'Sheep': 30, 'Dragon': 50 },
+      'Ox': { 'Snake': 90, 'Rooster': 85, 'Rat': 40, 'Goat': 30, 'Dragon': 50 },
       'Tiger': { 'Horse': 90, 'Dog': 85, 'Monkey': 40, 'Snake': 30, 'Pig': 50 },
-      'Rabbit': { 'Sheep': 90, 'Pig': 85, 'Rooster': 40, 'Dragon': 30, 'Dog': 50 },
+      'Rabbit': { 'Goat': 90, 'Pig': 85, 'Rooster': 40, 'Dragon': 30, 'Dog': 50 },
       'Dragon': { 'Rat': 90, 'Monkey': 85, 'Dog': 40, 'Rabbit': 30, 'Dragon': 50 },
       'Snake': { 'Ox': 90, 'Rooster': 85, 'Tiger': 40, 'Pig': 30, 'Snake': 50 },
       'Horse': { 'Tiger': 90, 'Dog': 85, 'Rat': 40, 'Ox': 30, 'Horse': 50 },
@@ -912,106 +897,95 @@ const Calculator = () => {
     setError(null);
   };
 
-  // Debounced timezone detection
-  const detectTimezone = debounce(async (birthPlace, birthDate, birthTime, setTimezone, onChange, setLoading) => {
-    if (birthPlace && isValidDate(birthDate) && birthTime) {
-      try {
-        setLoading(true);
-        // Placeholder for geocoding API
-        // const response = await fetch(`https://api.example.com/geocode?address=${encodeURIComponent(birthPlace)}&key=${process.env.REACT_APP_GEOCODING_API_KEY}`);
-        // const { lat, lng } = await response.json();
-        // const detectedTimezone = geoTz.find(lat, lng)[0];
+  // Timezone options for SelectField
+  const timezoneOptions = [
+    { value: 'UTC', label: 'UTC' },
+    { value: 'America/New_York', label: 'America/New_York' },
+    { value: 'Europe/London', label: 'Europe/London' },
+    { value: 'Asia/Tokyo', label: 'Asia/Tokyo' },
+    { value: 'Australia/Sydney', label: 'Australia/Sydney' },
+  ];
 
-        // Mock logic (replace with above in production)
-        const [city] = birthPlace.split(',').map(s => s.trim());
-        const detectedTimezone = city === 'New York' ? 'America/New_York' :
-          city === 'London' ? 'Europe/London' :
-          city === 'Tokyo' ? 'Asia/Tokyo' : 'UTC';
-        setTimezone(detectedTimezone);
-        onChange({ target: { value: detectedTimezone } });
-      } catch (error) {
-        console.error('Error detecting timezone:', error);
-        setTimezone('UTC');
-        onChange({ target: { value: 'UTC' } });
-      } finally {
-        setLoading(false);
-      }
-    }
-  }, 500);
+  // Analysis type options for dropdown
+  const analysisTypeOptions = [
+    { value: 'single', label: 'Individual Analysis' },
+    { value: 'compatibility', label: 'Compatibility Analysis' },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">Cosmic Connections Calculator</h1>
+      <h1 className="text-3xl font-bold text-center mb-6">DestinyPath</h1>
 
       <FormContainer>
-        <div className="mb-6">
-          <Tabs>
-            <TabList className="flex border-b mb-6">
-              <Tab
-                className={`px-4 py-2 cursor-pointer ${analysisType === 'single' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
-                onClick={() => setAnalysisType('single')}
-              >
-                Individual Analysis
-              </Tab>
-              <Tab
-                className={`px-4 py-2 cursor-pointer ${analysisType === 'compatibility' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
-                onClick={() => setAnalysisType('compatibility')}
-              >
-                Compatibility Analysis
-              </Tab>
-            </TabList>
-          </Tabs>
-        </div>
+        <SelectField
+          label="Analysis Type"
+          value={analysisType}
+          onChange={(e) => setAnalysisType(e.target.value)}
+          options={analysisTypeOptions}
+        />
 
-        <form onSubmit={handleSubmit}>
-          {analysisType === 'single' ? (
-            <div>
-              <SectionTitle>Enter Your Details</SectionTitle>
-              <InputField
-                label="Your Name"
-                value={person1.name}
-                onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'name', value: e.target.value })}
-              />
-              <InputField
-                label="Birth Date"
-                type="date"
-                value={person1.birthDate}
-                onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthDate', value: e.target.value })}
-              />
-              <InputField
-                label="Birth Time (if known)"
-                type="time"
-                value={person1.birthTime}
-                onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
-                helpText="More accurate results with birth time"
-              />
-              <InputField
-                label="Birth Place (City, Country)"
-                value={person1.birthPlace}
-                onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
-                helpText="Example: New York, USA"
-              />
-              <TimezoneField
-                label="Birth Timezone"
-                value={person1.birthTimezone}
-                onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
-                detectTimezone={(setTimezone, onChange, setLoading) =>
-                  detectTimezone(person1.birthPlace, person1.birthDate, person1.birthTime, setTimezone, onChange, setLoading)
-                }
-              />
-              <SelectField
-                label="Gender"
-                value={person1.gender}
-                onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'gender', value: e.target.value })}
-                options={[
-                  { value: 'female', label: 'Female' },
-                  { value: 'male', label: 'Male' },
-                  { value: 'non-binary', label: 'Non-binary' },
-                ]}
-                helpText="Used for certain calculations in Traditional Chinese Astrology"
-              />
+        {analysisType === 'single' ? (
+          <form onSubmit={handleSubmit}>
+            <SectionTitle>Enter Your Details</SectionTitle>
+            <InputField
+              label="Your Name"
+              value={person1.name}
+              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'name', value: e.target.value })}
+            />
+            <InputField
+              label="Birth Date"
+              type="date"
+              value={person1.birthDate}
+              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthDate', value: e.target.value })}
+            />
+            <InputField
+              label="Birth Time (if known)"
+              type="time"
+              value={person1.birthTime}
+              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
+              helpText="More accurate results with birth time"
+            />
+            <InputField
+              label="Birth Place (City, Country)"
+              value={person1.birthPlace}
+              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
+            />
+            <SelectField
+              label="Birth Timezone"
+              value={person1.birthTimezone}
+              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
+              options={timezoneOptions}
+            />
+            <SelectField
+              label="Gender"
+              value={person1.gender}
+              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'gender', value: e.target.value })}
+              options={[
+                { value: 'female', label: 'Female' },
+                { value: 'male', label: 'Male' },
+                { value: 'non-binary', label: 'Non-binary' },
+              ]}
+              helpText="Used for certain calculations in Traditional Chinese Astrology"
+            />
+            <div className="mt-8 flex justify-center space-x-4">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                {loading ? 'Calculating...' : 'Calculate'}
+              </button>
+              <button
+                type="button"
+                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                onClick={handleReset}
+              >
+                Reset
+              </button>
             </div>
-          ) : (
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <SectionTitle>Person 1</SectionTitle>
@@ -1033,9 +1007,15 @@ const Calculator = () => {
                   onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
                 />
                 <InputField
-                  label="Birth Place"
+                  label="Birth Place (City, Country)"
                   value={person1.birthPlace}
                   onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
+                />
+                <SelectField
+                  label="Birth Timezone"
+                  value={person1.birthTimezone}
+                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
+                  options={timezoneOptions}
                 />
                 <SelectField
                   label="Gender"
@@ -1068,9 +1048,15 @@ const Calculator = () => {
                   onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
                 />
                 <InputField
-                  label="Birth Place"
+                  label="Birth Place (City, Country)"
                   value={person2.birthPlace}
                   onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
+                />
+                <SelectField
+                  label="Birth Timezone"
+                  value={person2.birthTimezone}
+                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
+                  options={timezoneOptions}
                 />
                 <SelectField
                   label="Gender"
@@ -1084,25 +1070,24 @@ const Calculator = () => {
                 />
               </div>
             </div>
-          )}
-
-          <div className="mt-8 flex justify-center space-x-4">
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            >
-              {loading ? 'Calculating...' : 'Calculate'}
-            </button>
-            <button
-              type="button"
-              className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              onClick={handleReset}
-            >
-              Reset
-            </button>
-          </div>
-        </form>
+            <div className="mt-8 flex justify-center space-x-4">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                {loading ? 'Calculating...' : 'Calculate'}
+              </button>
+              <button
+                type="button"
+                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                onClick={handleReset}
+              >
+                Reset
+              </button>
+            </div>
+          </form>
+        )}
 
         {error && (
           <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-md">

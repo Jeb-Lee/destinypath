@@ -1,24 +1,29 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react';
 
 const LanguageSelector = () => {
-  const { i18n } = useTranslation();
+  const [language, setLanguage] = useState('en');
 
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
+  const handleChange = (e) => {
+    setLanguage(e.target.value);
+    // Future implementation: Update app language using i18n or similar
+    console.log(`Language changed to: ${e.target.value}`);
   };
 
   return (
-    <div className="relative inline-block text-left">
+    <div className="p-4">
+      <label htmlFor="language" className="mr-2 text-sm font-medium text-gray-700">
+        Language:
+      </label>
       <select
-        onChange={(e) => changeLanguage(e.target.value)}
-        className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
+        id="language"
+        value={language}
+        onChange={handleChange}
+        className="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
       >
         <option value="en">English</option>
-        <option value="ko">한국어</option>
-        <option value="zh">中文</option>
-        <option value="jp">日本語</option>
-
+        <option value="ko">Korean</option>
+        <option value="ja">Japanese</option>
+        <option value="zh">Chinese</option>
       </select>
     </div>
   );

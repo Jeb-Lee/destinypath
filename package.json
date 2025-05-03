@@ -1,42 +1,27 @@
 {
   "name": "destinypath",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite --port 3003",
-    "start": "vite --port 3003",
-    "server": "vite --port 3003",
+    "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
+    "preview": "vite preview",
+    "server": "node server.js"
   },
   "dependencies": {
-    "autoprefixer": "^10.4.14",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "geo-tz": "^8.0.0",
-    "lodash": "^4.17.21",
-    "lunar-calendar": "^0.1.4",
-    "moment-timezone": "^0.5.48",
-    "postcss": "^8.4.27",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "express": "^4.18.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-tabs": "^6.0.2",
-    "tailwindcss": "^3.3.3"
+    "moment-timezone": "^0.5.43",
+    "lunar-calendar": "^0.1.4",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.27.1",
-    "@babel/preset-react": "^7.27.1",
-    "@eslint/js": "^9.9.0",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.4.1",
-    "eslint": "^9.9.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "globals": "^15.9.0",
-    "vite": "^6.3.4"
+    "@vitejs/plugin-react": "^4.0.4",
+    "vite": "^4.4.9",
+    "tailwindcss": "^3.3.3",
+    "postcss": "^8.4.27",
+    "autoprefixer": "^10.4.15"
   }
 }

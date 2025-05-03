@@ -1,7 +1,11 @@
-export default function LoadingSpinner() {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-500"></div>
-      </div>
-    );
-  }
+import React from 'react';
+
+const LoadingSpinner = () => {
+  return (
+    <div className="flex justify-center items-center p-4">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+};
+
+export default LoadingSpinner;

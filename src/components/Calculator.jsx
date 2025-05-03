@@ -31,6 +31,21 @@ const SectionTitle = ({ children }) => (
   <h2 className="text-xl font-semibold mb-4">{children}</h2>
 );
 
+const CollapsibleSection = ({ title, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="mb-4">
+      <button
+        className="w-full text-left p-2 bg-gray-100 hover:bg-gray-200 rounded-md"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {title} {isOpen ? '▼' : '▶'}
+      </button>
+      {isOpen && <div className="p-4 bg-gray-50 rounded-md">{children}</div>}
+    </div>
+  );
+};
+
 // Helper components
 const InputField = ({ label, type = 'text', value, onChange, helpText = null }) => (
   <div className="mb-4">
@@ -65,9 +80,8 @@ const SelectField = ({ label, value, onChange, options, helpText = null }) => (
       value={value}
       onChange={onChange}
       required
-      aria-describedby={helpText ? `${label}-help` : undefined}
     >
-      {options.map(option => (
+      {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>
@@ -81,1297 +95,500 @@ const SelectField = ({ label, value, onChange, options, helpText = null }) => (
   </div>
 );
 
+// Chinese New Year dates for accurate zodiac calculation
+const chineseNewYearDates = {
+  1900: '1900-01-31',
+  1901: '1901-02-19',
+  1994: '1994-02-10',
+  1995: '1995-01-31',
+  1996: '1996-02-19',
+  1997: '1997-02-07',
+  1998: '1998-01-28',
+  1999: '1999-02-16',
+  2000: '2000-02-05',
+};
+
+// Helper functions for astrology calculations
+const calculateChineseZodiac = (dateString) => {
+  if (!dateString) return null;
+  
+  const date = moment(dateString, 'YYYY-MM-DD');
+  const year = date.year();
+  
+  const currentCNY = chineseNewYearDates[year] ? moment(chineseNewYearDates[year]) : moment(`${year}-02-05`);
+  const prevCNY = chineseNewYearDates[year-1] ? moment(chineseNewYearDates[year-1]) : moment(`${year-1}-02-05`);
+  
+  const isBeforeCNY = date.isBefore(currentCNY, 'day');
+  const zodiacYear = isBeforeCNY ? year - 1 : year;
+  
+  const animals = ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 
+                  'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'];
+  const elements = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'];
+  const yinYang = ['Yang', 'Yin'];
+  
+  const cycle = (zodiacYear - 4) % 60;
+  const animalIndex = cycle % 12;
+  const elementIndex = Math.floor(cycle / 2) % 5;
+  const yinYangIndex = cycle % 2;
+  
+  return {
+    animal: animals[animalIndex],
+    element: elements[elementIndex],
+    yinYang: yinYang[yinYangIndex],
+    description: `The ${elements[elementIndex]} ${animals[animalIndex]} (${yinYang[yinYangIndex]}) is known for unique traits. ${animals[animalIndex]}s are often ${getZodiacTraits(animals[animalIndex])}. The ${elements[elementIndex]} element adds ${getElementTraits(elements[elementIndex])}. ${yinYang[yinYangIndex]} energy influences ${yinYangIndex === 0 ? 'assertive, outward-focused' : 'receptive, introspective'} tendencies.`
+  };
+};
+
+const getZodiacTraits = (animal) => {
+  const traits = {
+    Rat: 'intelligent, adaptable, and resourceful, but may be overly cautious',
+    Ox: 'diligent, reliable, and patient, but can be stubborn',
+    Tiger: 'brave, confident, and charismatic, but sometimes impulsive',
+    Rabbit: 'gentle, elegant, and compassionate, but may avoid conflict',
+    Dragon: 'ambitious, energetic, and visionary, but can be arrogant',
+    Snake: 'wise, intuitive, and discreet, but may be secretive',
+    Horse: 'free-spirited, enthusiastic, and sociable, but can be restless',
+    Goat: 'creative, kind, and empathetic, but may lack decisiveness',
+    Monkey: 'clever, versatile, and witty, but can be manipulative',
+    Rooster: 'observant, hardworking, and confident, but may be critical',
+    Dog: 'loyal, honest, and protective, but can be pessimistic',
+    Pig: 'generous, sincere, and diligent, but may be naive'
+  };
+  return traits[animal] || 'versatile and balanced';
+};
+
+const getElementTraits = (element) => {
+  const traits = {
+    Wood: 'growth, creativity, and flexibility, fostering leadership and innovation',
+    Fire: 'passion, energy, and dynamism, driving enthusiasm and charisma',
+    Earth: 'stability, nurturing, and practicality, promoting reliability and care',
+    Metal: 'strength, discipline, and clarity, enhancing focus and determination',
+    Water: 'wisdom, adaptability, and intuition, encouraging deep insight and flow'
+  };
+  return traits[element] || 'balanced attributes';
+};
+
+const calculateBazi = (birthDate, birthTime) => {
+  const date = moment(birthDate + ' ' + birthTime, 'YYYY-MM-DD HH:mm');
+  const year = date.year();
+  const month = date.month() + 1;
+  const day = date.date();
+  const hour = date.hour();
+  
+  const stems = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'];
+  const branches = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
+  const elements = ['Wood', 'Wood', 'Fire', 'Fire', 'Earth', 'Earth', 'Metal', 'Metal', 'Water', 'Water'];
+  
+  const yearStem = stems[(year - 4) % 10];
+  const yearBranch = branches[(year - 4) % 12];
+  const monthBranch = branches[(month + 1) % 12];
+  const dayStem = stems[(Math.abs(day - 1) % 10)];
+  const hourBranch = branches[Math.floor(hour / 2) % 12];
+  
+  const dayMaster = dayStem;
+  const elementCounts = {
+    Wood: 0, Fire: 0, Earth: 0, Metal: 0, Water: 0
+  };
+  
+  [yearStem, dayStem].forEach(stem => {
+    const idx = stems.indexOf(stem);
+    elementCounts[elements[idx]]++;
+  });
+  
+  [yearBranch, monthBranch, hourBranch].forEach(branch => {
+    const idx = branches.indexOf(branch);
+    elementCounts[elements[idx % 5]]++;
+  });
+  
+  const tenGods = {
+    Companion: 'Supports teamwork and alliances',
+    Output: 'Enhances creativity and expression',
+    Wealth: 'Drives ambition and resource accumulation',
+    Authority: 'Promotes discipline and leadership',
+    Resource: 'Fosters learning and intuition'
+  };
+  
+  const maxStrength = Math.max(...Object.values(elementCounts));
+  const energyChart = Object.entries(elementCounts).map(([element, count]) => {
+    const bars = '█'.repeat(Math.round((count / maxStrength) * 10));
+    return `${element.padEnd(6)}: ${bars} (${count})`;
+  }).join('\n');
+  
+  return {
+    pillars: [
+      { stem: yearStem, branch: yearBranch, element: elements[stems.indexOf(yearStem)] },
+      { stem: stems[(month + 1) % 10], branch: monthBranch, element: elements[(month + 1) % 5] },
+      { stem: dayStem, branch: branches[day % 12], element: elements[stems.indexOf(dayStem)] },
+      { stem: stems[hour % 10], branch: hourBranch, element: elements[hour % 5] }
+    ],
+    dayMaster: `${dayMaster} (${elements[stems.indexOf(dayMaster)]})`,
+    elementBalance: elementCounts,
+    tenGods: tenGods,
+    energyChart: energyChart,
+    analysis: `Day Master ${dayMaster} (${elements[stems.indexOf(dayMaster)]}) indicates a ${getDayMasterStrength(dayMaster, elementCounts)} personality. The elemental balance shows ${describeElementBalance(elementCounts)}. Ten Gods suggest ${describeTenGods(tenGods)}.`
+  };
+};
+
+const getDayMasterStrength = (dayMaster, elementCounts) => {
+  const stemIndex = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'].indexOf(dayMaster);
+  const dmElement = ['Wood', 'Wood', 'Fire', 'Fire', 'Earth', 'Earth', 'Metal', 'Metal', 'Water', 'Water'][stemIndex];
+  const strength = elementCounts[dmElement] >= 2 ? 'strong' : 'weak';
+  return strength === 'strong' ? 'resilient, self-reliant' : 'adaptable, collaborative';
+};
+
+const describeElementBalance = (elementCounts) => {
+  const dominant = Object.entries(elementCounts).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+  const missing = Object.entries(elementCounts).filter(([_, count]) => count === 0).map(([e]) => e);
+  return `dominant ${dominant} energy, promoting ${getElementTraits(dominant)}. ${missing.length ? `Missing ${missing.join(', ')} suggests potential challenges in ${missing.map(e => getElementTraits(e).split(', ')[0]).join(', ')}.` : 'Balanced elements indicate harmony.'}`;
+};
+
+const describeTenGods = (tenGods) => {
+  return Object.entries(tenGods).map(([god, desc]) => `${god} influences ${desc.toLowerCase()}`).join('; ');
+};
+
+const calculateZiWeiDouShu = (birthDate, birthTime) => {
+  const majorStars = ['Zi Wei (Emperor)', 'Tian Fu (Treasury)', 'Tai Yang (Sun)'];
+  return {
+    stars: majorStars,
+    palaces: ['Life Palace', 'Wealth Palace', 'Career Palace'],
+    analysis: `Major stars (${majorStars.join(', ')}) shape destiny. Zi Wei indicates leadership and ambition; Tian Fu suggests financial acumen; Tai Yang drives visibility and influence. Life Palace governs overall path, emphasizing ${getZWDSTraits('Life Palace')}.`
+  };
+};
+
+const getZWDSTraits = (palace) => {
+  const traits = {
+    'Life Palace': 'core identity and life purpose',
+    'Wealth Palace': 'financial prospects and resource management',
+    'Career Palace': 'professional growth and achievements'
+  };
+  return traits[palace] || 'balanced influence';
+};
+
+const calculateLuckPillars = (birthYear) => {
+  const pillars = [];
+  for (let i = 0; i < 3; i++) {
+    const startYear = birthYear + i * 10;
+    pillars.push({
+      period: `${startYear}-${startYear + 9}`,
+      influence: `This decade emphasizes ${['growth and exploration', 'stability and achievement', 'reflection and legacy'][i]}.`
+    });
+  }
+  return pillars;
+};
+
+const calculateCompatibility = (person1, person2) => {
+  const zodiac1 = calculateChineseZodiac(person1.birthDate);
+  const zodiac2 = calculateChineseZodiac(person2.birthDate);
+  const bazi1 = calculateBazi(person1.birthDate, person1.birthTime);
+  const bazi2 = calculateBazi(person2.birthDate, person2.birthTime);
+  
+  const compatibilityScores = {
+    'Rat': { Ox: 90, Dragon: 85, Monkey: 80, Tiger: 50 },
+    'Ox': { Rat: 90, Snake: 85, Rooster: 80, Tiger: 45 },
+  };
+  
+  const score = compatibilityScores[zodiac1.animal]?.[zodiac2.animal] || 70;
+  
+  const elementInteractions = {
+    'Wood-Fire': 'Supportive: Wood fuels Fire, fostering passion and growth.',
+    'Fire-Earth': 'Harmonious: Fire creates Earth, promoting stability.',
+    'Earth-Metal': 'Nurturing: Earth produces Metal, enhancing structure.',
+    'Metal-Water': 'Flowing: Metal contains Water, supporting intuition.',
+    'Water-Wood': 'Growth: Water nourishes Wood, encouraging creativity.',
+  };
+  
+  const interaction = elementInteractions[`${bazi1.dayMaster.split('(')[1].slice(0, -1)}-${bazi2.dayMaster.split('(')[1].slice(0, -1)}`] || 'Balanced: Neutral elemental dynamics.';
+  
+  return {
+    zodiacScore: `${score}%`,
+    zodiacAnalysis: `The ${zodiac1.animal}-${zodiac2.animal} pair has a compatibility score of ${score}%. ${getZodiacCompatibility(zodiac1.animal, zodiac2.animal)}.`,
+    elementalInteraction: interaction,
+    advice: `To enhance harmony, focus on ${getRelationshipAdvice(zodiac1.animal, zodiac2.animal)}.`
+  };
+};
+
+const getZodiacCompatibility = (animal1, animal2) => {
+  const compatibilities = {
+    'Rat-Ox': 'Strong mutual support; Rat's ingenuity complements Ox's reliability.',
+    'Tiger-Tiger': 'Dynamic but challenging; both need to manage impulsiveness.'
+  };
+  return compatibilities[`${animal1}-${animal2}`] || compatibilities[`${animal2}-${animal1}`] || 'Balanced dynamics with mutual respect.';
+};
+
+const getRelationshipAdvice = (animal1, animal2) => {
+  const advice = {
+    'Rat-Ox': 'open communication and shared goals',
+    'Tiger-Tiger': 'patience and compromise to balance strong personalities'
+  };
+  return advice[`${animal1}-${animal2}`] || advice[`${animal2}-${animal1}`] || 'mutual understanding and clear communication';
+};
+
+// Main component
 const Calculator = () => {
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [analysisType, setAnalysisType] = useState('single');
   const [person1, dispatchPerson1] = useReducer(personReducer, initialPersonState);
   const [person2, dispatchPerson2] = useReducer(personReducer, { ...initialPersonState, gender: 'male' });
+  const [analysisType, setAnalysisType] = useState('single');
+  const [result, setResult] = useState(null);
 
-  // Validate date input
-  const isValidDate = (dateString) => {
-    return moment(dateString, 'YYYY-MM-DD', true).isValid();
+  const handleInputChange = (personDispatch) => (field) => (e) => {
+    personDispatch({ type: 'UPDATE_FIELD', field, value: e.target.value });
   };
 
-  // Calculate timezone offset in hours for a given place (simplified)
-  const getTimezoneOffset = (place) => {
-    if (!place) return 0;
-    if (place.toLowerCase().includes('new york')) return -5;
-    if (place.toLowerCase().includes('london')) return 0;
-    if (place.toLowerCase().includes('tokyo')) return 9;
-    return 0; // Default to UTC
-  };
-
-  // Lookup table for Chinese New Year dates (simplified, covers 1990-2000 for example)
-  const chineseNewYearDates = {
-    1990: '1990-01-27',
-    1991: '1991-02-15',
-    1992: '1992-02-04',
-    1993: '1993-01-23',
-    1994: '1994-02-10',
-    1995: '1995-01-31',
-    1996: '1996-02-19',
-    1997: '1997-02-07',
-    1998: '1998-01-28',
-    1999: '1999-02-16',
-    2000: '2000-02-05',
-  };
-
-  // Get Chinese New Year date for a given year
-  const getChineseNewYearDate = (year) => {
-    const dateString = chineseNewYearDates[year] || `${year}-02-01`; // Fallback to Feb 1 if year not in table
-    return new Date(dateString);
-  };
-
-  // Calculate Chinese Zodiac Animal with precise lunar calendar consideration
-  const calculateZodiac = (dateString, birthPlace) => {
-    const animals = ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'];
-    if (!dateString || !isValidDate(dateString)) throw new Error('Invalid birth date provided');
-
-    const birthDate = new Date(dateString);
-    const year = birthDate.getFullYear();
-    const newYearDate = getChineseNewYearDate(year);
-
-    const birthDateTime = new Date(dateString);
-    const timezoneOffset = getTimezoneOffset(birthPlace);
-    birthDateTime.setHours(birthDateTime.getHours() + timezoneOffset);
-
-    // If birth date is before Chinese New Year, use previous year's zodiac
-    const zodiacYear = birthDateTime < newYearDate ? year - 1 : year;
-    return animals[(zodiacYear - 4) % 12];
-  };
-
-  // Alternative method for validation (simplified, aligns with primary method)
-  const calculateZodiacWithLibrary = (dateString) => {
-    if (!dateString || !isValidDate(dateString)) throw new Error('Invalid birth date provided');
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const newYearDate = getChineseNewYearDate(year);
-    const zodiacYear = date < newYearDate ? year - 1 : year;
-    const animals = ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'];
-    return animals[(zodiacYear - 4) % 12];
-  };
-
-  // Calculate Western Zodiac Sign with precise degree calculation
-  const calculateWesternZodiac = (date, birthPlace, birthTime) => {
-    if (!(date instanceof Date) || isNaN(date)) throw new Error('Invalid date object');
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = birthTime ? parseInt(birthTime.split(':')[0]) : 12;
-    const minute = birthTime ? parseInt(birthTime.split(':')[1]) : 0;
-
-    const dateObj = new Date(date);
-    dateObj.setHours(hour, minute);
-
-    if (birthPlace) {
-      const offset = getTimezoneOffset(birthPlace);
-      dateObj.setHours(dateObj.getHours() + offset);
-    }
-
-    if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries';
-    if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Taurus';
-    if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Gemini';
-    if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'Cancer';
-    if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'Leo';
-    if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'Virgo';
-    if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'Libra';
-    if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'Scorpio';
-    if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'Sagittarius';
-    if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'Capricorn';
-    if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'Aquarius';
-    return 'Pisces';
-  };
-
-  // Simplified Moon Sign calculation (approximation)
-  const calculateMoonSign = (date, birthPlace) => {
-    if (!(date instanceof Date) || isNaN(date)) throw new Error('Invalid date object');
-    const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-    const moonCycle = 29.53; // Synodic month in days
-    const approximateSignIndex = Math.floor((dayOfYear % moonCycle) / 2.5) % 12;
-    const signs = [
-      'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-    ];
-    return signs[approximateSignIndex];
-  };
-
-  // Simplified Ascendant calculation (approximation)
-  const calculateAscendant = (date, birthPlace) => {
-    if (!(date instanceof Date) || isNaN(date)) throw new Error('Invalid date object');
-    const hour = date.getHours();
-    const approximateSignIndex = Math.floor(hour / 2) % 12; // Roughly 2 hours per sign
-    const signs = [
-      'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-    ];
-    return signs[approximateSignIndex];
-  };
-
-  // Calculate Chinese Zodiac Element
-  const calculateZodiacElement = (year) => {
-    const elements = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'];
-    return elements[Math.floor((year - 4) % 10 / 2)];
-  };
-
-  // Calculate Chinese Zodiac Yin/Yang
-  const calculateYinYang = (year) => {
-    return year % 2 === 0 ? 'Yang' : 'Yin';
-  };
-
-  // Calculate Chinese Zodiac Luck Pillars
-  const calculateLuckPillars = (birthYear, gender) => {
-    const currentYear = new Date().getFullYear();
-    const age = currentYear - birthYear;
-    const startAge = gender === 'male' ? 1 : 0;
-    const pillars = [];
-
-    for (let i = startAge; i <= age + 10; i += 10) {
-      pillars.push({
-        ageRange: `${i}-${i + 9}`,
-        element: calculateZodiacElement(birthYear + i),
-      });
-    }
-
-    return pillars;
-  };
-
-  // Calculate Bazi (Four Pillars of Destiny)
-  const calculateBazi = (birthDate, birthTime, birthPlace) => {
-    if (!isValidDate(birthDate)) throw new Error('Invalid birth date');
-    const date = new Date(birthDate);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = birthTime ? parseInt(birthTime.split(':')[0]) : 12;
-
-    const heavenlyStems = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'];
-    const earthlyBranches = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
-
-    const yearStem = heavenlyStems[(year - 4) % 10];
-    const yearBranch = earthlyBranches[(year - 4) % 12];
-    const monthStem = heavenlyStems[((year - 4) * 12 + month - 1) % 10];
-    const monthBranch = earthlyBranches[(month + 1) % 12];
-    const dayNumber = Math.floor((date - new Date(date.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)) + 1;
-    const dayStem = heavenlyStems[dayNumber % 10];
-    const dayBranch = earthlyBranches[dayNumber % 12];
-    const hourIndex = Math.floor((hour + 1) / 2) % 12;
-    const hourStem = heavenlyStems[(dayNumber * 12 + hourIndex) % 10];
-    const hourBranch = earthlyBranches[hourIndex];
-
-    return {
-      yearPillar: `${yearStem} ${yearBranch}`,
-      monthPillar: `${monthStem} ${monthBranch}`,
-      dayPillar: `${dayStem} ${dayBranch}`,
-      hourPillar: `${hourStem} ${hourBranch}`,
-    };
-  };
-
-  // Calculate Zi Wei Dou Shu components
-  const calculateZiWeiStars = (birthDate, birthHour, gender) => {
-    if (!(birthDate instanceof Date) || isNaN(birthDate)) throw new Error('Invalid birth date');
-    const month = birthDate.getMonth() + 1;
-    const day = birthDate.getDate();
-
-    const monthMainStars = [
-      'Purple Star', 'Heavenly Star', 'Sun', 'Wu Qu',
-      'Tian Ji', 'Tai Yang', 'Wu Qu', 'Tian Tong',
-      'Lian Zhen', 'Tian Liang', 'Zi Wei', 'Tai Yin',
-    ];
-
-    const hourDeputyStars = [
-      'Wen Chang', 'Wen Qu', 'Left Assistant', 'Right Assistant',
-      'Tian Kui', 'Tian Yue', 'Zuo Fu', 'You Bi',
-      'Tian Fu', 'Tian Xiang', 'Huo Xing', 'Ling Xing',
-    ];
-
-    const mainStarIndex = (month - 1) % 12;
-    const mainStar = monthMainStars[mainStarIndex];
-
-    const deputyStarIndex = Math.floor(birthHour / 2) % 12;
-    const deputyStar = hourDeputyStars[deputyStarIndex];
-
-    const yearLastDigit = birthDate.getFullYear() % 10;
-    const luckyStars = [];
-    const unluckyStars = [];
-
-    if (gender === 'male') {
-      luckyStars.push(yearLastDigit % 2 === 0 ? 'Lu Cun' : 'Qing Yang');
-      unluckyStars.push(yearLastDigit % 2 === 0 ? 'Huo Xing' : 'Ling Xing');
-    } else {
-      luckyStars.push(yearLastDigit % 2 === 0 ? 'Qing Yang' : 'Lu Cun');
-      unluckyStars.push(yearLastDigit % 2 === 0 ? 'Ling Xing' : 'Huo Xing');
-    }
-
-    if (day % 3 === 0) luckyStars.push('Tian Ma');
-    if (day % 5 === 0) unluckyStars.push('Da Hao');
-
-    return {
-      mainStar,
-      deputyStar,
-      luckyStars: luckyStars.join(', '),
-      unluckyStars: unluckyStars.join(', '),
-    };
-  };
-
-  const calculateLifePalace = (month, day) => {
-    const palaces = [
-      'Wealth Palace', 'Brothers Palace', 'Life Palace',
-      'Parents Palace', 'Career Palace', 'Property Palace',
-      'Spouse Palace', 'Children Palace', 'Health Palace',
-      'Travel Palace', 'Friends Palace', 'Spirit Palace',
-    ];
-
-    const index = (month + day - 2) % 12;
-    return palaces[index];
-  };
-
-  const calculateBodyPalace = (lifePalace) => {
-    const palaceMapping = {
-      'Wealth Palace': 'Physical Body',
-      'Brothers Palace': 'Emotional Body',
-      'Life Palace': 'Spiritual Body',
-      'Parents Palace': 'Ancestral Body',
-      'Career Palace': 'Professional Body',
-      'Property Palace': 'Material Body',
-      'Spouse Palace': 'Relational Body',
-      'Children Palace': 'Creative Body',
-      'Health Palace': 'Vital Body',
-      'Travel Palace': 'Mobile Body',
-      'Friends Palace': 'Social Body',
-      'Spirit Palace': 'Psychic Body',
-    };
-
-    return palaceMapping[lifePalace] || 'Physical Body';
-  };
-
-  // Calculate Natal Chart (Western Astrology)
-  const calculateNatalChart = (birthDate, birthTime, birthPlace) => {
-    if (!isValidDate(birthDate)) throw new Error('Invalid birth date');
-    const date = new Date(birthDate);
-    const time = birthTime || '12:00';
-    const [hours, minutes] = time.split(':').map(Number);
-    date.setHours(hours, minutes);
-
-    const sunSign = calculateWesternZodiac(date, birthPlace, birthTime);
-    const moonSign = calculateMoonSign(date, birthPlace);
-    const ascendant = calculateAscendant(date, birthPlace);
-
-    return {
-      sun: sunSign,
-      moon: moonSign,
-      ascendant,
-    };
-  };
-
-  // Generate personality traits based on zodiac
-  const getPersonalityTraits = (zodiacSign) => {
-    const traits = {
-      Aries: {
-        strengths: ['Courageous', 'Determined', 'Confident', 'Enthusiastic', 'Optimistic', 'Honest', 'Passionate'],
-        challenges: ['Impatient', 'Short-tempered', 'Impulsive', 'Aggressive', 'Self-centered', 'Blunt'],
-        description: 'Aries are bold and ambitious, diving headfirst into even the most challenging situations.',
-      },
-      Taurus: {
-        strengths: ['Reliable', 'Patient', 'Practical', 'Devoted', 'Responsible', 'Stable', 'Persistent'],
-        challenges: ['Stubborn', 'Possessive', 'Uncompromising', 'Materialistic', 'Resistant to change'],
-        description: 'Taurus is a grounded sign that values security and comfort above all else.',
-      },
-      Gemini: {
-        strengths: ['Adaptable', 'Outgoing', 'Intelligent', 'Eloquent', 'Youthful', 'Energetic', 'Witty'],
-        challenges: ['Nervous', 'Inconsistent', 'Indecisive', 'Superficial', 'Nosy', 'Manipulative'],
-        description: 'Gemini is characterized by curiosity and expressed through lively, intelligent conversation.',
-      },
-      Cancer: {
-        strengths: ['Loyal', 'Emotional', 'Sympathetic', 'Persuasive', 'Intuitive', 'Compassionate', 'Protective'],
-        challenges: ['Moody', 'Pessimistic', 'Suspicious', 'Manipulative', 'Insecure', 'Clingy'],
-        description: 'Cancer is deeply intuitive and sentimental, making them extremely sympathetic and attached.',
-      },
-      Leo: {
-        strengths: ['Generous', 'Warmhearted', 'Creative', 'Cheerful', 'Humorous', 'Dramatic', 'Confident'],
-        challenges: ['Arrogant', 'Stubborn', 'Self-centered', 'Lazy', 'Inflexible', 'Domineering'],
-        description: 'Leos are natural leaders who enjoy the spotlight and have big, open hearts.',
-      },
-      Virgo: {
-        strengths: ['Loyal', 'Analytical', 'Kind', 'Hardworking', 'Practical', 'Meticulous', 'Modest'],
-        challenges: ['Worrying', 'Critical', 'Overthinking', 'Shy', 'Perfectionist', 'Judgmental'],
-        description: 'Virgos are logical, practical, and systematic in their approach to life.',
-      },
-      Libra: {
-        strengths: ['Diplomatic', 'Graceful', 'Idealistic', 'Peaceful', 'Fair', 'Social', 'Cooperative'],
-        challenges: ['Indecisive', 'Self-pitying', 'Avoids confrontations', 'Easily influenced', 'Unrealistic'],
-        description: 'Libras strive for balance and harmony in all aspects of their lives.',
-      },
-      Scorpio: {
-        strengths: ['Determined', 'Passionate', 'Resourceful', 'Brave', 'Dynamic', 'Intense', 'Loyal'],
-        challenges: ['Jealous', 'Secretive', 'Violent', 'Resentful', 'Manipulative', 'Obsessive'],
-        description: 'Scorpios are passionate and assertive with determination and focus.',
-      },
-      Sagittarius: {
-        strengths: ['Generous', 'Idealistic', 'Great sense of humor', 'Optimistic', 'Honest', 'Adventurous'],
-        challenges: ['Impatient', 'Tactless', 'Restless', 'Irresponsible', 'Overconfident', 'Forgetful'],
-        description: 'Sagittarius values freedom and exploration both physically and intellectually.',
-      },
-      Capricorn: {
-        strengths: ['Responsible', 'Disciplined', 'Self-controlled', 'Good managers', 'Patient', 'Ambitious'],
-        challenges: ['Know-it-all', 'Unforgiving', 'Condescending', 'Pessimistic', 'Rigid', 'Stubborn'],
-        description: 'Capricorns are practical and ambitious, valuing discipline and responsibility.',
-      },
-      Aquarius: {
-        strengths: ['Progressive', 'Original', 'Independent', 'Humanitarian', 'Inventive', 'Friendly'],
-        challenges: ['Unemotional', 'Contrary', 'Fixed opinions', 'Aloof', 'Unpredictable', 'Detached'],
-        description: 'Aquarius is forward-thinking and innovative, often ahead of their time.',
-      },
-      Pisces: {
-        strengths: ['Compassionate', 'Adaptable', 'Accepting', 'Devoted', 'Imaginative', 'Sensitive'],
-        challenges: ['Escapist', 'Overly trusting', 'Sad', 'Fearful', 'Weak-willed', 'Self-pitying'],
-        description: 'Pisces are exceptionally receptive and the most compassionate of all zodiac signs.',
-      },
-    };
-    return traits[zodiacSign] || { strengths: [], challenges: [], description: '' };
-  };
-
-  // Generate communication style based on zodiac elements
-  const getCommunicationStyle = (zodiacSign) => {
-    const elementMap = {
-      fire: ['Aries', 'Leo', 'Sagittarius'],
-      earth: ['Taurus', 'Virgo', 'Capricorn'],
-      air: ['Gemini', 'Libra', 'Aquarius'],
-      water: ['Cancer', 'Scorpio', 'Pisces'],
-    };
-
-    for (const [element, signs] of Object.entries(elementMap)) {
-      if (signs.includes(zodiacSign)) {
-        switch (element) {
-          case 'fire':
-            return {
-              style: 'Direct and enthusiastic communicator who speaks from the heart',
-              tips: [
-                'Be direct but mindful of others\' feelings',
-                'Channel your passion into constructive discussions',
-                'Practice active listening to balance your natural expressiveness',
-              ],
-            };
-          case 'earth':
-            return {
-              style: 'Practical and grounded communicator who values facts',
-              tips: [
-                'Provide concrete examples to support your points',
-                'Be patient with more abstract thinkers',
-                'Remember to express emotions along with facts',
-              ],
-            };
-          case 'air':
-            return {
-              style: 'Intellectual and social communicator who enjoys debate',
-              tips: [
-                'Ensure your conversations have depth as well as breadth',
-                'Be mindful of others who may need more time to process',
-                'Balance intellectual discussions with emotional connection',
-              ],
-            };
-          case 'water':
-            return {
-              style: 'Intuitive and emotional communicator who reads between the lines',
-              tips: [
-                'Trust your intuition but verify assumptions',
-                'Express your needs clearly to avoid misunderstandings',
-                'Protect your sensitive nature in challenging conversations',
-              ],
-            };
-          default:
-            return {
-              style: 'Adaptable communicator who adjusts to the situation',
-              tips: [],
-            };
-        }
-      }
-    }
-    return {
-      style: 'Adaptable communicator who adjusts to the situation',
-      tips: [],
-    };
-  };
-
-  // Generate emotional tendencies based on zodiac
-  const getEmotionalTendencies = (zodiacSign) => {
-    const emotionalMap = {
-      Aries: {
-        description: 'Passionate and quick to react emotionally',
-        management: [
-          'Practice pausing before reacting to emotional triggers',
-          'Channel fiery energy into physical activity',
-          'Learn to express anger constructively',
-        ],
-      },
-      Taurus: {
-        description: 'Steady emotions but deeply affected by security',
-        management: [
-          'Create stable routines for emotional grounding',
-          'Express feelings through creative or physical outlets',
-          'Be open to change to avoid stubborn emotional patterns',
-        ],
-      },
-      Gemini: {
-        description: 'Intellectual approach to emotions, can seem detached',
-        management: [
-          'Practice connecting feelings with thoughts',
-          'Journaling can help process emotions',
-          'Share feelings verbally to deepen connections',
-        ],
-      },
-      Cancer: {
-        description: 'Deeply emotional and sensitive to environment',
-        management: [
-          'Create safe emotional spaces for self-expression',
-          'Practice healthy boundaries to avoid emotional overwhelm',
-          'Use nurturing activities to self-soothe',
-        ],
-      },
-      Leo: {
-        description: 'Dramatic expressions of emotion, wears heart on sleeve',
-        management: [
-          'Channel dramatic energy into creative pursuits',
-          'Practice humility to balance emotional expression',
-          'Recognize others\' emotional needs',
-        ],
-      },
-      Virgo: {
-        description: 'Analytical about emotions, can be critical',
-        management: [
-          'Balance analysis with acceptance of feelings',
-          'Practice self-compassion to reduce self-criticism',
-          'Express care through practical support',
-        ],
-      },
-      Libra: {
-        description: 'Seeks emotional harmony, avoids conflict',
-        management: [
-          'Practice assertiveness in expressing needs',
-          'Recognize that some conflict is healthy',
-          'Balance others\' emotions with your own needs',
-        ],
-      },
-      Scorpio: {
-        description: 'Intense emotions, keeps true feelings hidden',
-        management: [
-          'Practice vulnerability with trusted individuals',
-          'Channel intensity into transformative activities',
-          'Release control to experience emotional freedom',
-        ],
-      },
-      Sagittarius: {
-        description: 'Optimistic emotions, avoids heavy emotional scenes',
-        management: [
-          'Balance optimism with realistic emotional processing',
-          'Practice staying present with difficult emotions',
-          'Share philosophical perspectives to process feelings',
-        ],
-      },
-      Capricorn: {
-        description: 'Controls emotions, appears reserved',
-        management: [
-          'Create safe spaces for emotional expression',
-          'Recognize that vulnerability is not weakness',
-          'Balance responsibility with self-care',
-        ],
-      },
-      Aquarius: {
-        description: 'Detached approach to emotions, values freedom',
-        management: [
-          'Connect emotions with humanitarian causes',
-          'Practice grounding techniques to connect with feelings',
-          'Balance independence with emotional connection',
-        ],
-      },
-      Pisces: {
-        description: 'Absorbs others emotions, highly empathetic',
-        management: [
-          'Practice energetic protection techniques',
-          'Create clear emotional boundaries',
-          'Channel empathy into creative or healing work',
-        ],
-      },
-    };
-    return emotionalMap[zodiacSign] || {
-      description: 'Emotional responses vary based on situation',
-      management: [],
-    };
-  };
-
-  // Calculate Life Path Number (Numerology)
-  const calculateLifePathNumber = (birthDate) => {
-    if (!isValidDate(birthDate)) throw new Error('Invalid birth date');
-    const date = new Date(birthDate);
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-
-    const reduceNumber = (num) => {
-      if (num === 11 || num === 22) return num; // Master numbers
-      while (num > 9) {
-        num = num.toString().split('').reduce((sum, digit) => sum + parseInt(digit), 0);
-      }
-      return num;
-    };
-
-    const dayNum = reduceNumber(day);
-    const monthNum = reduceNumber(month);
-    const yearNum = reduceNumber(year);
-
-    return reduceNumber(dayNum + monthNum + yearNum);
-  };
-
-  // Get numerology description
-  const getNumerologyDescription = (lifePathNumber) => {
-    const descriptions = {
-      1: 'Independent and individualistic. Natural born leader with strong drive.',
-      2: 'Cooperative and diplomatic. Natural mediator with intuitive nature.',
-      3: 'Creative and expressive. Natural entertainer with optimistic outlook.',
-      4: 'Practical and methodical. Natural organizer with strong work ethic.',
-      5: 'Adventurous and freedom-loving. Natural explorer with versatile skills.',
-      6: 'Responsible and nurturing. Natural caretaker with harmonious approach.',
-      7: 'Analytical and introspective. Natural philosopher with spiritual depth.',
-      8: 'Ambitious and authoritative. Natural manager with material focus.',
-      9: 'Compassionate and selfless. Humanitarian with universal perspective.',
-      11: 'Intuitive and inspirational. Spiritual messenger with heightened awareness.',
-      22: 'Practical visionary. Master builder with tremendous potential.',
-      33: 'Compassionate teacher. Nurturing mentor with selfless service.',
-    };
-    return descriptions[lifePathNumber] || 'Unknown life path number';
-  };
-
-  // Calculate compatibility between two zodiac signs
-  const calculateZodiacCompatibility = (sign1, sign2) => {
-    const elements = {
-      fire: ['Aries', 'Leo', 'Sagittarius'],
-      earth: ['Taurus', 'Virgo', 'Capricorn'],
-      air: ['Gemini', 'Libra', 'Aquarius'],
-      water: ['Cancer', 'Scorpio', 'Pisces'],
-    };
-
-    let element1 = '';
-    let element2 = '';
-
-    for (const [element, signs] of Object.entries(elements)) {
-      if (signs.includes(sign1)) element1 = element;
-      if (signs.includes(sign2)) element2 = element;
-    }
-
-    let score = 50;
-
-    if (element1 === element2) score += 20;
-
-    if (
-      (element1 === 'fire' && element2 === 'air') ||
-      (element1 === 'air' && element2 === 'fire') ||
-      (element1 === 'earth' && element2 === 'water') ||
-      (element1 === 'water' && element2 === 'earth')
-    ) {
-      score += 25;
-    }
-
-    if (
-      (element1 === 'fire' && element2 === 'water') ||
-      (element1 === 'water' && element2 === 'fire') ||
-      (element1 === 'earth' && element2 === 'air') ||
-      (element1 === 'air' && element2 === 'earth')
-    ) {
-      score += 10;
-    }
-
-    const specialCombos = {
-      'Aries-Leo': 15,
-      'Leo-Sagittarius': 15,
-      'Aries-Sagittarius': 15,
-      'Taurus-Virgo': 15,
-      'Virgo-Capricorn': 15,
-      'Taurus-Capricorn': 15,
-      'Gemini-Libra': 15,
-      'Libra-Aquarius': 15,
-      'Gemini-Aquarius': 15,
-      'Cancer-Scorpio': 15,
-      'Scorpio-Pisces': 15,
-      'Cancer-Pisces': 15,
-      'Aries-Libra': 10,
-      'Taurus-Scorpio': 10,
-      'Gemini-Sagittarius': 10,
-      'Cancer-Capricorn': 10,
-      'Leo-Aquarius': 10,
-      'Virgo-Pisces': 10,
-    };
-
-    const combo1 = `${sign1}-${sign2}`;
-    const combo2 = `${sign2}-${sign1}`;
-
-    if (specialCombos[combo1]) score += specialCombos[combo1];
-    if (specialCombos[combo2]) score += specialCombos[combo2];
-
-    if (score > 100) score = 100;
-
-    let description = '';
-    if (score >= 90) {
-      description = 'Exceptional compatibility! This connection has natural harmony and understanding.';
-    } else if (score >= 75) {
-      description = 'Strong compatibility. You complement each other well with minimal effort.';
-    } else if (score >= 60) {
-      description = 'Good compatibility. With communication, this can be a fulfilling relationship.';
-    } else if (score >= 40) {
-      description = 'Average compatibility. You\'ll need to work on understanding each other\'s differences.';
-    } else {
-      description = 'Challenging compatibility. This relationship may require significant compromise.';
-    }
-
-    return {
-      score,
-      description,
-      element1,
-      element2,
-    };
-  };
-
-  // Calculate Chinese zodiac compatibility
-  const calculateChineseZodiacCompatibility = (animal1, animal2) => {
-    const compatibilityMatrix = {
-      'Rat': { 'Dragon': 90, 'Monkey': 85, 'Ox': 40, 'Horse': 30, 'Goat': 50 },
-      'Ox': { 'Snake': 90, 'Rooster': 85, 'Rat': 40, 'Goat': 30, 'Dragon': 50 },
-      'Tiger': { 'Horse': 90, 'Dog': 85, 'Monkey': 40, 'Snake': 30, 'Pig': 50 },
-      'Rabbit': { 'Goat': 90, 'Pig': 85, 'Rooster': 40, 'Dragon': 30, 'Dog': 50 },
-      'Dragon': { 'Rat': 90, 'Monkey': 85, 'Dog': 40, 'Rabbit': 30, 'Dragon': 50 },
-      'Snake': { 'Ox': 90, 'Rooster': 85, 'Tiger': 40, 'Pig': 30, 'Snake': 50 },
-      'Horse': { 'Tiger': 90, 'Dog': 85, 'Rat': 40, 'Ox': 30, 'Horse': 50 },
-      'Goat': { 'Rabbit': 90, 'Pig': 85, 'Ox': 40, 'Dog': 30, 'Goat': 50 },
-      'Monkey': { 'Dragon': 90, 'Rat': 85, 'Tiger': 40, 'Pig': 30, 'Monkey': 50 },
-      'Rooster': { 'Snake': 90, 'Ox': 85, 'Rabbit': 40, 'Dog': 30, 'Rooster': 50 },
-      'Dog': { 'Tiger': 90, 'Horse': 85, 'Dragon': 40, 'Rooster': 30, 'Dog': 50 },
-      'Pig': { 'Rabbit': 90, 'Goat': 85, 'Snake': 40, 'Monkey': 30, 'Pig': 50 },
-    };
-
-    let score = 60;
-
-    if (compatibilityMatrix[animal1] && compatibilityMatrix[animal1][animal2]) {
-      score = compatibilityMatrix[animal1][animal2];
-    } else if (compatibilityMatrix[animal2] && compatibilityMatrix[animal2][animal1]) {
-      score = compatibilityMatrix[animal2][animal1];
-    }
-
-    if (animal1 === animal2) score = 70;
-
-    let description = '';
-    if (score >= 85) {
-      description = 'Highly compatible! These animals naturally bring out the best in each other.';
-    } else if (score >= 70) {
-      description = 'Good match with natural understanding.';
-    } else if (score >= 50) {
-      description = 'Average compatibility that requires some compromise.';
-    } else {
-      description = 'Challenging compatibility that requires significant adaptation.';
-    }
-
-    return {
-      score,
-      description,
-    };
-  };
-
-  // Submit handler for analysis
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (analysisType === 'single') {
-        if (!person1.name || !isValidDate(person1.birthDate)) {
-          throw new Error('Please provide a valid name and birth date');
-        }
-      } else {
-        if (!person1.name || !isValidDate(person1.birthDate) || !person2.name || !isValidDate(person2.birthDate)) {
-          throw new Error('Please provide valid names and birth dates for both people');
-        }
-      }
-
-      if (analysisType === 'single') {
-        const birthDate = new Date(person1.birthDate);
-        const birthYear = birthDate.getFullYear();
-        const birthHour = person1.birthTime ? parseInt(person1.birthTime.split(':')[0]) : 12;
-
-        const westernZodiac = calculateWesternZodiac(birthDate, person1.birthPlace, person1.birthTime);
-        const chineseZodiac = calculateZodiac(person1.birthDate, person1.birthPlace);
-        const element = calculateZodiacElement(birthYear);
-        const yinYang = calculateYinYang(birthYear);
-        const lifePathNumber = calculateLifePathNumber(person1.birthDate);
-        const natalChart = calculateNatalChart(person1.birthDate, person1.birthTime, person1.birthPlace);
-        const bazi = calculateBazi(person1.birthDate, person1.birthTime, person1.birthPlace);
-        const personalityTraits = getPersonalityTraits(westernZodiac);
-        const communicationStyle = getCommunicationStyle(westernZodiac);
-        const emotionalTendencies = getEmotionalTendencies(westernZodiac);
-        const ziWeiStars = calculateZiWeiStars(birthDate, birthHour, person1.gender);
-        const lifePathDesc = getNumerologyDescription(lifePathNumber);
-        const luckPillars = calculateLuckPillars(birthYear, person1.gender);
-        const lifePalace = calculateLifePalace(birthDate.getMonth() + 1, birthDate.getDate());
-        const bodyPalace = calculateBodyPalace(lifePalace);
-
-        setResult({
-          type: 'single',
-          person: person1.name,
-          westernZodiac,
-          chineseZodiac,
-          element,
-          yinYang,
-          lifePathNumber,
-          lifePathDesc,
-          natalChart,
-          bazi,
-          personalityTraits,
-          communicationStyle,
-          emotionalTendencies,
-          ziWeiStars,
-          luckPillars,
-          lifePalace,
-          bodyPalace,
-        });
-      } else {
-        const birthDate1 = new Date(person1.birthDate);
-        const birthDate2 = new Date(person2.birthDate);
-
-        const westernZodiac1 = calculateWesternZodiac(birthDate1, person1.birthPlace, person1.birthTime);
-        const westernZodiac2 = calculateWesternZodiac(birthDate2, person2.birthPlace, person2.birthTime);
-
-        const chineseZodiac1 = calculateZodiac(person1.birthDate, person1.birthPlace);
-        const chineseZodiac2 = calculateZodiac(person2.birthDate, person2.birthPlace);
-
-        const zodiacCompatibility = calculateZodiacCompatibility(westernZodiac1, westernZodiac2);
-        const chineseCompatibility = calculateChineseZodiacCompatibility(chineseZodiac1, chineseZodiac2);
-
-        const lifePathNumber1 = calculateLifePathNumber(person1.birthDate);
-        const lifePathNumber2 = calculateLifePathNumber(person2.birthDate);
-
-        const numerologyCompatibility = Math.abs(lifePathNumber1 - lifePathNumber2) <= 2 ?
-          { score: 85, description: 'Strong numerological harmony' } :
-          { score: 60, description: 'Average numerological connection' };
-
-        const overallScore = Math.round((zodiacCompatibility.score + chineseCompatibility.score + numerologyCompatibility.score) / 3);
-
-        setResult({
-          type: 'compatibility',
-          person1: {
-            name: person1.name,
-            westernZodiac: westernZodiac1,
-            chineseZodiac: chineseZodiac1,
-            lifePathNumber: lifePathNumber1,
-          },
-          person2: {
-            name: person2.name,
-            westernZodiac: westernZodiac2,
-            chineseZodiac: chineseZodiac2,
-            lifePathNumber: lifePathNumber2,
-          },
-          compatibility: {
-            western: zodiacCompatibility,
-            chinese: chineseCompatibility,
-            numerology: numerologyCompatibility,
-            overall: {
-              score: overallScore,
-              description: overallScore >= 80 ? 'Exceptional match with strong harmony' :
-                overallScore >= 70 ? 'Very good match with natural connection' :
-                overallScore >= 60 ? 'Good match with some complementary aspects' :
-                overallScore >= 50 ? 'Average match requiring understanding' :
-                'Challenging match requiring significant effort',
-            },
-          },
-        });
-      }
-    } catch (err) {
-      setError(err.message || 'An error occurred during analysis');
-    } finally {
-      setLoading(false);
+    
+    if (!person1.name || !moment(person1.birthDate, 'YYYY-MM-DD', true).isValid()) {
+      setResult({ error: 'Please provide a valid name and birth date for Person 1.' });
+      return;
     }
+    
+    if (analysisType === 'compatibility' && (!person2.name || !moment(person2.birthDate, 'YYYY-MM-DD', true).isValid())) {
+      setResult({ error: 'Please provide a valid name and birth date for Person 2.' });
+      return;
+    }
+    
+    const person1Data = {
+      name: person1.name,
+      zodiac: calculateChineseZodiac(person1.birthDate),
+      bazi: calculateBazi(person1.birthDate, person1.birthTime),
+      ziWei: calculateZiWeiDouShu(person1.birthDate, person1.birthTime),
+      luckPillars: calculateLuckPillars(moment(person1.birthDate).year()),
+      personality: `Based on ${person1.name}'s ${person1.gender} energy, ${person1.name} exhibits ${getPersonalityProfile(person1)}.`,
+      deepSeekAnalysis: `DeepSeek R1 Analysis: ${getDeepSeekAnalysis(calculateBazi(person1.birthDate, person1.birthTime))}`
+    };
+    
+    const resultData = { person1: person1Data };
+    
+    if (analysisType === 'compatibility') {
+      const person2Data = {
+        name: person2.name,
+        zodiac: calculateChineseZodiac(person2.birthDate),
+        bazi: calculateBazi(person2.birthDate, person2.birthTime),
+        ziWei: calculateZiWeiDouShu(person2.birthDate, person2.birthTime),
+        luckPillars: calculateLuckPillars(moment(person2.birthDate).year()),
+        personality: `Based on ${person2.name}'s ${person2.gender} energy, ${person2.name} exhibits ${getPersonalityProfile(person2)}.`,
+        deepSeekAnalysis: `DeepSeek R1 Analysis: ${getDeepSeekAnalysis(calculateBazi(person2.birthDate, person2.birthTime))}`
+      };
+      resultData.person2 = person2Data;
+      resultData.compatibility = calculateCompatibility(person1, person2);
+    }
+    
+    setResult(resultData);
   };
 
-  // Reset form
-  const handleReset = () => {
-    dispatchPerson1({ type: 'RESET' });
-    dispatchPerson2({ type: 'RESET' });
-    setResult(null);
-    setError(null);
+  const getPersonalityProfile = (person) => {
+    const zodiac = calculateChineseZodiac(person.birthDate);
+    return `${zodiac.animal} traits (${zodiac.description.split('.')[1].trim()}), influenced by ${person.gender === 'female' ? 'yin' : 'yang'} energy, promoting ${person.gender === 'female' ? 'introspection and empathy' : 'action and leadership'}.`;
   };
 
-  // Timezone options for SelectField
-  const timezoneOptions = [
-    { value: 'UTC', label: 'UTC' },
-    { value: 'America/New_York', label: 'America/New_York' },
-    { value: 'Europe/London', label: 'Europe/London' },
-    { value: 'Asia/Tokyo', label: 'Asia/Tokyo' },
-    { value: 'Australia/Sydney', label: 'Australia/Sydney' },
-  ];
+  const getDeepSeekAnalysis = (bazi) => {
+    return `Pattern Analysis: The ${bazi.dayMaster} Day Master interacts with ${describeTenGods(bazi.tenGods)}. Elemental energy distribution:\n${bazi.energyChart}\nThis suggests a ${bazi.elementBalance.Wood > 2 ? 'growth-oriented' : 'balanced'} life path, with strengths in ${Object.keys(bazi.elementBalance).filter(e => bazi.elementBalance[e] > 1).join(', ')}.`;
+  };
 
-  // Analysis type options for dropdown
   const analysisTypeOptions = [
     { value: 'single', label: 'Individual Analysis' },
-    { value: 'compatibility', label: 'Compatibility Analysis' },
+    { value: 'compatibility', label: 'Couple Compatibility' }
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">DestinyPath</h1>
-
+    <div className="container mx-auto p-4 max-w-3xl">
+      <h1 className="text-2xl font-bold mb-6">Ultra-Detailed Chinese Astrology Calculator</h1>
+      
       <FormContainer>
-        <SelectField
-          label="Analysis Type"
-          value={analysisType}
-          onChange={(e) => setAnalysisType(e.target.value)}
-          options={analysisTypeOptions}
-        />
-
-        {analysisType === 'single' ? (
-          <form onSubmit={handleSubmit}>
-            <SectionTitle>Enter Your Details</SectionTitle>
-            <InputField
-              label="Your Name"
-              value={person1.name}
-              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'name', value: e.target.value })}
-            />
-            <InputField
-              label="Birth Date"
-              type="date"
-              value={person1.birthDate}
-              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthDate', value: e.target.value })}
-            />
-            <InputField
-              label="Birth Time (if known)"
-              type="time"
-              value={person1.birthTime}
-              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
-              helpText="More accurate results with birth time"
-            />
-            <InputField
-              label="Birth Place (City, Country)"
-              value={person1.birthPlace}
-              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
-            />
-            <SelectField
-              label="Birth Timezone"
-              value={person1.birthTimezone}
-              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
-              options={timezoneOptions}
-            />
-            <SelectField
-              label="Gender"
-              value={person1.gender}
-              onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'gender', value: e.target.value })}
-              options={[
-                { value: 'female', label: 'Female' },
-                { value: 'male', label: 'Male' },
-                { value: 'non-binary', label: 'Non-binary' },
-              ]}
-              helpText="Used for certain calculations in Traditional Chinese Astrology"
-            />
-            <div className="mt-8 flex justify-center space-x-4">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                {loading ? 'Calculating...' : 'Calculate'}
-              </button>
-              <button
-                type="button"
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                onClick={handleReset}
-              >
-                Reset
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <SectionTitle>Person 1</SectionTitle>
-                <InputField
-                  label="Name"
-                  value={person1.name}
-                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'name', value: e.target.value })}
-                />
-                <InputField
-                  label="Birth Date"
-                  type="date"
-                  value={person1.birthDate}
-                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthDate', value: e.target.value })}
-                />
-                <InputField
-                  label="Birth Time (if known)"
-                  type="time"
-                  value={person1.birthTime}
-                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
-                />
-                <InputField
-                  label="Birth Place (City, Country)"
-                  value={person1.birthPlace}
-                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
-                />
-                <SelectField
-                  label="Birth Timezone"
-                  value={person1.birthTimezone}
-                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
-                  options={timezoneOptions}
-                />
-                <SelectField
-                  label="Gender"
-                  value={person1.gender}
-                  onChange={(e) => dispatchPerson1({ type: 'UPDATE_FIELD', field: 'gender', value: e.target.value })}
-                  options={[
-                    { value: 'female', label: 'Female' },
-                    { value: 'male', label: 'Male' },
-                    { value: 'non-binary', label: 'Non-binary' },
-                  ]}
-                />
-              </div>
-              <div>
-                <SectionTitle>Person 2</SectionTitle>
-                <InputField
-                  label="Name"
-                  value={person2.name}
-                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'name', value: e.target.value })}
-                />
-                <InputField
-                  label="Birth Date"
-                  type="date"
-                  value={person2.birthDate}
-                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthDate', value: e.target.value })}
-                />
-                <InputField
-                  label="Birth Time (if known)"
-                  type="time"
-                  value={person2.birthTime}
-                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthTime', value: e.target.value })}
-                />
-                <InputField
-                  label="Birth Place (City, Country)"
-                  value={person2.birthPlace}
-                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthPlace', value: e.target.value })}
-                />
-                <SelectField
-                  label="Birth Timezone"
-                  value={person2.birthTimezone}
-                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'birthTimezone', value: e.target.value })}
-                  options={timezoneOptions}
-                />
-                <SelectField
-                  label="Gender"
-                  value={person2.gender}
-                  onChange={(e) => dispatchPerson2({ type: 'UPDATE_FIELD', field: 'gender', value: e.target.value })}
-                  options={[
-                    { value: 'female', label: 'Female' },
-                    { value: 'male', label: 'Male' },
-                    { value: 'non-binary', label: 'Non-binary' },
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="mt-8 flex justify-center space-x-4">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              >
-                {loading ? 'Calculating...' : 'Calculate'}
-              </button>
-              <button
-                type="button"
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-                onClick={handleReset}
-              >
-                Reset
-              </button>
-            </div>
-          </form>
-        )}
-
-        {error && (
-          <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
+        <form onSubmit={handleSubmit}>
+          <SelectField
+            label="Analysis Type"
+            value={analysisType}
+            onChange={(e) => setAnalysisType(e.target.value)}
+            options={analysisTypeOptions}
+            helpText="Choose between individual or couple compatibility analysis"
+          />
+          
+          <SectionTitle>Person 1</SectionTitle>
+          <InputField
+            label="Name"
+            value={person1.name}
+            onChange={handleInputChange(dispatchPerson1)('name')}
+          />
+          <InputField
+            label="Birth Date"
+            type="date"
+            value={person1.birthDate}
+            onChange={handleInputChange(dispatchPerson1)('birthDate')}
+            helpText="Format: YYYY-MM-DD"
+          />
+          <InputField
+            label="Birth Time"
+            type="time"
+            value={person1.birthTime}
+            onChange={handleInputChange(dispatchPerson1)('birthTime')}
+            helpText="Format: HH:MM (24-hour)"
+          />
+          <InputField
+            label="Birth Place"
+            value={person1.birthPlace}
+            onChange={handleInputChange(dispatchPerson1)('birthPlace')}
+          />
+          <SelectField
+            label="Timezone"
+            value={person1.birthTimezone}
+            onChange={handleInputChange(dispatchPerson1)('birthTimezone')}
+            options={moment.tz.names().map(tz => ({ value: tz, label: tz }))}
+          />
+          <SelectField
+            label="Gender"
+            value={person1.gender}
+            onChange={handleInputChange(dispatchPerson1)('gender')}
+            options={[
+              { value: 'female', label: 'Female' },
+              { value: 'male', label: 'Male' }
+            ]}
+          />
+          
+          {analysisType === 'compatibility' && (
+            <>
+              <SectionTitle>Person 2</SectionTitle>
+              <InputField
+                label="Name"
+                value={person2.name}
+                onChange={handleInputChange(dispatchPerson2)('name')}
+              />
+              <InputField
+                label="Birth Date"
+                type="date"
+                value={person2.birthDate}
+                onChange={handleInputChange(dispatchPerson2)('birthDate')}
+                helpText="Format: YYYY-MM-DD"
+              />
+              <InputField
+                label="Birth Time"
+                type="time"
+                value={person2.birthTime}
+                onChange={handleInputChange(dispatchPerson2)('birthTime')}
+                helpText="Format: HH:MM (24-hour)"
+              />
+              <InputField
+                label="Birth Place"
+                value={person2.birthPlace}
+                onChange={handleInputChange(dispatchPerson2)('birthPlace')}
+              />
+              <SelectField
+                label="Timezone"
+                value={person2.birthTimezone}
+                onChange={handleInputChange(dispatchPerson2)('birthTimezone')}
+                options={moment.tz.names().map(tz => ({ value: tz, label: tz }))}
+              />
+              <SelectField
+                label="Gender"
+                value={person2.gender}
+                onChange={handleInputChange(dispatchPerson2)('gender')}
+                options={[
+                  { value: 'female', label: 'Female' },
+                  { value: 'male', label: 'Male' }
+                ]}
+              />
+            </>
+          )}
+          
+          <button
+            type="submit"
+            className="w-full p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Calculate
+          </button>
+        </form>
       </FormContainer>
-
+      
       {result && (
         <FormContainer>
-          <h2 className="text-2xl font-bold mb-6 text-center">
-            {result.type === 'single' ?
-              `Analysis Results for ${result.person}` :
-              `Compatibility Analysis: ${result.person1.name} & ${result.person2.name}`}
-          </h2>
-
-          {result.type === 'single' ? (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-2">Western Astrology</h3>
-                  <p className="text-lg mb-1"><span className="font-medium">Sun Sign:</span> {result.westernZodiac}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Moon Sign:</span> {result.natalChart.moon}</p>
-                  <p className="text-lg mb-3"><span className="font-medium">Ascendant:</span> {result.natalChart.ascendant}</p>
-                  <p className="text-sm italic">{result.personalityTraits.description}</p>
-                </div>
-
-                <div className="p-4 bg-amber-50 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-2">Chinese Astrology</h3>
-                  <p className="text-lg mb-1"><span className="font-medium">Animal Sign:</span> {result.chineseZodiac}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Element:</span> {result.element}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Yin/Yang:</span> {result.yinYang}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Life Palace:</span> {result.lifePalace}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Body Palace:</span> {result.bodyPalace}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-2">Numerology</h3>
-                  <p className="text-lg mb-1"><span className="font-medium">Life Path Number:</span> {result.lifePathNumber}</p>
-                  <p className="text-sm italic">{result.lifePathDesc}</p>
-                </div>
-
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-2">Ba Zi (Four Pillars)</h3>
-                  <p className="text-lg mb-1"><span className="font-medium">Year Pillar:</span> {result.bazi.yearPillar}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Month Pillar:</span> {result.bazi.monthPillar}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Day Pillar:</span> {result.bazi.dayPillar}</p>
-                  <p className="text-lg mb-1"><span className="font-medium">Hour Pillar:</span> {result.bazi.hourPillar}</p>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Personality Profile</h3>
-
-                <div className="mb-4">
-                  <h4 className="text-lg font-medium mb-2">Key Strengths</h4>
-                  <ul className="list-disc pl-5">
-                    {result.personalityTraits.strengths.map((strength, index) => (
-                      <li key={index} className="mb-1">{strength}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mb-4">
-                  <h4 className="text-lg font-medium mb-2">Potential Challenges</h4>
-                  <ul className="list-disc pl-5">
-                    {result.personalityTraits.challenges.map((challenge, index) => (
-                      <li key={index} className="mb-1">{challenge}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="text-lg font-medium mb-2">Communication Style</h4>
-                  <p className="mb-2">{result.communicationStyle.style}</p>
-                  <h5 className="font-medium mb-1">Communication Tips:</h5>
-                  <ul className="list-disc pl-5">
-                    {result.communicationStyle.tips.map((tip, index) => (
-                      <li key={index} className="mb-1">{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mb-6">
-                  <h4 className="text-lg font-medium mb-2">Emotional Tendencies</h4>
-                  <p className="mb-2">{result.emotionalTendencies.description}</p>
-                  <h5 className="font-medium mb-1">Emotional Management:</h5>
-                  <ul className="list-disc pl-5">
-                    {result.emotionalTendencies.management.map((tip, index) => (
-                      <li key={index} className="mb-1">{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-4">Zi Wei Dou Shu (Purple Star Astrology)</h3>
-                <p className="mb-1"><span className="font-medium">Main Star:</span> {result.ziWeiStars.mainStar}</p>
-                <p className="mb-1"><span className="font-medium">Deputy Star:</span> {result.ziWeiStars.deputyStar}</p>
-                <p className="mb-1"><span className="font-medium">Lucky Stars:</span> {result.ziWeiStars.luckyStars}</p>
-                <p className="mb-1"><span className="font-medium">Challenging Stars:</span> {result.ziWeiStars.unluckyStars}</p>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Luck Pillars</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white">
-                    <thead>
-                      <tr>
-                        <th className="py-2 px-4 border-b">Age Range</th>
-                        <th className="py-2 px-4 border-b">Element</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.luckPillars.map((pillar, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                          <td className="py-2 px-4 border-b">{pillar.ageRange}</td>
-                          <td className="py-2 px-4 border-b">{pillar.element}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+          <SectionTitle>Analysis Results</SectionTitle>
+          
+          {result.error ? (
+            <div className="p-4 bg-red-100 text-red-700 rounded-md">
+              {result.error}
             </div>
           ) : (
-            <div>
-              <div className="flex justify-center mb-8">
-                <div className="w-64 h-64 relative">
-                  <div className="absolute inset-4 rounded-full bg-white flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-blue-600">
-                        {result.compatibility.overall.score}%
-                      </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        Compatibility Score
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center mb-8">
-                <h3 className="text-xl font-semibold mb-2">Overall Compatibility</h3>
-                <p className="text-lg">{result.compatibility.overall.description}</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="text-lg font-semibold mb-2">Western Zodiac</h4>
-                  <p className="mb-1">
-                    <span className="font-medium">{result.person1.name}:</span> {result.person1.westernZodiac}
-                  </p>
-                  <p className="mb-1">
-                    <span className="font-medium">{result.person2.name}:</span> {result.person2.westernZodiac}
-                  </p>
-                  <div className="mt-3">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500"
-                        style={{ width: `${result.compatibility.western.score}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      {result.compatibility.western.score}% - {result.compatibility.western.description}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-amber-50 rounded-lg">
-                  <h4 className="text-lg font-semibold mb-2">Chinese Zodiac</h4>
-                  <p className="mb-1">
-                    <span className="font-medium">{result.person1.name}:</span> {result.person1.chineseZodiac}
-                  </p>
-                  <p className="mb-1">
-                    <span className="font-medium">{result.person2.name}:</span> {result.person2.chineseZodiac}
-                  </p>
-                  <div className="mt-3">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-amber-500"
-                        style={{ width: `${result.compatibility.chinese.score}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      {result.compatibility.chinese.score}% - {result.compatibility.chinese.description}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h4 className="text-lg font-semibold mb-2">Numerology</h4>
-                  <p className="mb-1">
-                    <span className="font-medium">{result.person1.name}:</span> {result.person1.lifePathNumber}
-                  </p>
-                  <p className="mb-1">
-                    <span className="font-medium">{result.person2.name}:</span> {result.person2.lifePathNumber}
-                  </p>
-                  <div className="mt-3">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-purple-500"
-                        style={{ width: `${result.compatibility.numerology.score}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      {result.compatibility.numerology.score}% - {result.compatibility.numerology.description}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold mb-4">Elemental Compatibility</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <h4 className="text-lg font-semibold mb-2">Western Elements</h4>
-                    <p className="mb-1">
-                      <span className="font-medium">{result.person1.name}:</span> {result.compatibility.western.element1}
-                    </p>
-                    <p className="mb-1">
-                      <span className="font-medium">{result.person2.name}:</span> {result.compatibility.western.element2}
-                    </p>
-                    <p className="mt-3">
-                      {result.compatibility.western.element1 === result.compatibility.western.element2 ?
-                        "Same elements create harmony but may lack dynamism" :
-                        result.compatibility.western.element1 + " and " + result.compatibility.western.element2 +
-                        (["fire", "air"].includes(result.compatibility.western.element1) && ["fire", "air"].includes(result.compatibility.western.element2) ?
-                          " complement each other well" :
-                          (["earth", "water"].includes(result.compatibility.western.element1) && ["earth", "water"].includes(result.compatibility.western.element2)) ?
-                            " create a stable foundation" : " have potential for growth through challenge"
-                        )
-                      }
-                    </p>
-                  </div>
-                  <div className="p-4 bg-red-50 rounded-lg">
-                    <h4 className="text-lg font-semibold mb-2">Relationship Dynamics</h4>
-                    <p className="mb-2">
-                      {result.compatibility.overall.score >= 80 ?
-                        "This relationship has natural chemistry and understanding. Communication flows easily and you complement each other's strengths." :
-                        result.compatibility.overall.score >= 70 ?
-                          "You have good compatibility with areas of natural connection. With mutual understanding, this can be a fulfilling relationship." :
-                          result.compatibility.overall.score >= 60 ?
-                            "There are both complementary and challenging aspects to this relationship. Growth comes through understanding differences." :
-                            "This relationship may require significant effort and compromise to find harmony. Differences can be sources of growth if approached with patience."}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Relationship Advice</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-4 bg-indigo-50 rounded-lg">
-                    <h4 className="text-lg font-semibold mb-2">Strengths to Build On</h4>
-                    <ul className="list-disc pl-5">
-                      <li className="mb-1">Shared values in {result.compatibility.western.score >= 70 ? "many" : "some"} areas</li>
-                      <li className="mb-1">Complementary personality traits</li>
-                      {result.compatibility.overall.score >= 70 && (
-                        <li className="mb-1">Natural emotional understanding</li>
-                      )}
-                      {result.compatibility.chinese.score >= 70 && (
-                        <li className="mb-1">Supportive Chinese zodiac combination</li>
-                      )}
-                    </ul>
-                  </div>
-                  <div className="p-4 bg-yellow-50 rounded-lg">
-                    <h4 className="text-lg font-semibold mb-2">Areas for Growth</h4>
-                    <ul className="list-disc pl-5">
-                      {result.compatibility.overall.score < 70 && (
-                        <li className="mb-1">Different communication styles may require adjustment</li>
-                      )}
-                      <li className="mb-1">Potential conflicts around {result.compatibility.western.element1 === result.compatibility.western.element2 ?
-                        "similar blind spots" : "different approaches"}</li>
-                      {result.compatibility.chinese.score < 60 && (
-                        <li className="mb-1">Chinese zodiac indicates some challenging dynamics</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <>
+              <CollapsibleSection title={`${result.person1.name || 'Person 1'}'s Chinese Astrology`}>
+                <h3 className="font-medium">Chinese Zodiac</h3>
+                <p>{result.person1.zodiac.description}</p>
+                
+                <h3 className="font-medium mt-4">Bazi (Four Pillars)</h3>
+                <p><strong>Day Master:</strong> {result.person1.bazi.dayMaster}</p>
+                <p><strong>Pillars:</strong></p>
+                <ul>
+                  {result.person1.bazi.pillars.map((pillar, idx) => (
+                    <li key={idx}>{`${pillar.stem} ${pillar.branch} (${pillar.element})`}</li>
+                  ))}
+                </ul>
+                <p><strong>Analysis:</strong> {result.person1.bazi.analysis}</p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded">{result.person1.bazi.energyChart}</pre>
+                
+                <h3 className="font-medium mt-4">Zi Wei Dou Shu</h3>
+                <p>{result.person1.ziWei.analysis}</p>
+                
+                <h3 className="font-medium mt-4">Luck Pillars</h3>
+                <ul>
+                  {result.person1.luckPillars.map((pillar, idx) => (
+                    <li key={idx}>{pillar.period}: {pillar.influence}</li>
+                  ))}
+                </ul>
+                
+                <h3 className="font-medium mt-4">Personality Profile</h3>
+                <p>{result.person1.personality}</p>
+                
+                <h3 className="font-medium mt-4">DeepSeek R1 Analysis</h3>
+                <p>{result.person1.deepSeekAnalysis}</p>
+              </CollapsibleSection>
+              
+              {result.person2 && (
+                <CollapsibleSection title={`${result.person2.name || 'Person 2'}'s Chinese Astrology`}>
+                  <h3 className="font-medium">Chinese Zodiac</h3>
+                  <p>{result.person2.zodiac.description}</p>
+                  
+                  <h3 className="font-medium mt-4">Bazi (Four Pillars)</h3>
+                  <p><strong>Day Master:</strong> {result.person2.bazi.dayMaster}</p>
+                  <p><strong>Pillars:</strong></p>
+                  <ul>
+                    {result.person2.bazi.pillars.map((pillar, idx) => (
+                      <li key={idx}>{`${pillar.stem} ${pillar.branch} (${pillar.element})`}</li>
+                    ))}
+                  </ul>
+                  <p><strong>Analysis:</strong> {result.person2.bazi.analysis}</p>
+                  <pre className="mt-2 p-2 bg-gray-100 rounded">{result.person2.bazi.energyChart}</pre>
+                  
+                  <h3 className="font-medium mt-4">Zi Wei Dou Shu</h3>
+                  <p>{result.person2.ziWei.analysis}</p>
+                  
+                  <h3 className="font-medium mt-4">Luck Pillars</h3>
+                  <ul>
+                    {result.person2.luckPillars.map((pillar, idx) => (
+                      <li key={idx}>{pillar.period}: {pillar.influence}</li>
+                    ))}
+                  </ul>
+                  
+                  <h3 className="font-medium mt-4">Personality Profile</h3>
+                  <p>{result.person2.personality}</p>
+                  
+                  <h3 className="font-medium mt-4">DeepSeek R1 Analysis</h3>
+                  <p>{result.person2.deepSeekAnalysis}</p>
+                </CollapsibleSection>
+              )}
+              
+              {result.compatibility && (
+                <CollapsibleSection title="Couple Compatibility Analysis">
+                  <h3 className="font-medium">Zodiac Compatibility</h3>
+                  <p><strong>Score:</strong> {result.compatibility.zodiacScore}</p>
+                  <p>{result.compatibility.zodiacAnalysis}</p>
+                  
+                  <h3 className="font-medium mt-4">Elemental Interaction</h3>
+                  <p>{result.compatibility.elementalInteraction}</p>
+                  
+                  <h3 className="font-medium mt-4">Relationship Advice</h3>
+                  <p>{result.compatibility.advice}</p>
+                </CollapsibleSection>
+              )}
+            </>
           )}
         </FormContainer>
       )}

@@ -309,8 +309,8 @@ const calculateCompatibility = (person1, person2) => {
 
 const getZodiacCompatibility = (animal1, animal2) => {
   const compatibilities = {
-    'Rat-Ox': 'Strong mutual support; Rat's ingenuity complements Ox's reliability.',
-    'Tiger-Tiger': 'Dynamic but challenging; both need to manage impulsiveness.'
+    'Rat-Ox': "Strong mutual support; Rat's ingenuity complements Ox's reliability",
+    'Tiger-Tiger': "Dynamic but challenging; both need to manage impulsiveness."
   };
   return compatibilities[`${animal1}-${animal2}`] || compatibilities[`${animal2}-${animal1}`] || 'Balanced dynamics with mutual respect.';
 };
